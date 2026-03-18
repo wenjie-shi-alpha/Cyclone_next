@@ -945,7 +945,15 @@ def load_recon_observation_structured(
     issue_dt: datetime,
     max_time_diff_hours: int = 6,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    fp = BASE / "data" / "interim" / "recon" / "recon_observation_features.csv"
+    candidates = [
+        BASE / "data" / "interim" / "recon" / "recon_observation_features.csv",
+        BASE / "data" / "interim" / "recon" / "recon_observation_features_full.csv",
+    ]
+    fp = candidates[0]
+    for cand in candidates:
+        if cand.exists():
+            fp = cand
+            break
     trace: Dict[str, Any] = {"recon_feature_file": str(fp)}
     row, dt_abs_h, err = load_best_row_by_storm_issue(fp, storm_id, issue_dt, max_time_diff_hours=max_time_diff_hours)
     if row is None:

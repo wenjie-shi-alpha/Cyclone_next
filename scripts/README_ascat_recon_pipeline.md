@@ -164,8 +164,11 @@ python3 scripts/extract_recon_features_remote.py \
   --only-with-storm-id \
   --subdir REPNT2 \
   --subdir REPNT3 \
+  --subdir AHONT1 \
+  --subdir AHOPN1 \
   --sleep-sec 0.10 \
-  --http-sleep-sec 0.08
+  --http-sleep-sec 0.08 \
+  --max-candidates-per-request 80
 ```
 
 ---
@@ -187,6 +190,7 @@ python3 scripts/extract_recon_features_remote.py \
 已实现控制脚本：
 - `scripts/run_ascat_full_controlled.sh`
 - `scripts/run_recon_full_controlled.sh`
+- `scripts/run_recon_missing_secondary_fill.sh`
 
 目录契约（对齐 GOES）：
 - `data/interim/ascat/full_by_year/manifests/`
@@ -195,12 +199,27 @@ python3 scripts/extract_recon_features_remote.py \
 - `data/interim/recon/full_by_year/manifests/`
 - `data/interim/recon/full_by_year/features/`
 - `data/interim/recon/full_by_year/summaries/`
+- `data/interim/recon/supplement_secondary_fill/manifests/`
+- `data/interim/recon/supplement_secondary_fill/features/`
+- `data/interim/recon/supplement_secondary_fill/merged_features/`
+- `data/interim/recon/supplement_secondary_fill/merged_summaries/`
 
 控制策略：
 1. 先按年拆分 manifest。
 2. 每年单独跑提取并写 summary。
 3. 年度产物存在即跳过，支持断点续跑。
 4. 最后做全量 merge，输出 `*_full.csv` 与 `*_full_summary.json`。
+5. 当 baseline 只有 `REPNT2/REPNT3` 时，优先使用 `scripts/run_recon_missing_secondary_fill.sh` 对 `missing_real_data` 行补跑 `AHONT1/AHOPN1`，避免整年全量重跑。
+
+Recon 缺失补全入口：
+```bash
+RECON_YEAR_START=2016 \
+RECON_YEAR_END=2025 \
+RECON_SECONDARY_SUBDIRS="AHONT1 AHOPN1" \
+RECON_MAX_CANDIDATES=80 \
+PROMOTE_TO_CANONICAL=0 \
+bash scripts/run_recon_missing_secondary_fill.sh
+```
 
 ---
 
@@ -259,10 +278,9 @@ bash scripts/run_obs_smoke_cds_manual.sh 2020 50
 bash scripts/run_obs_full_cds_manual.sh 2016 2025 1
 ```
 
-Recon（本地终端）：
+Recon（本地终端，默认补全版）：
 ```bash
 RECON_PREFETCH_FIRST=0 \
-RECON_SUBDIRS="REPNT2 REPNT3" \
 RECON_YEAR_START=2016 \
 RECON_YEAR_END=2025 \
 RECON_SLEEP_SEC=0.10 \
@@ -282,6 +300,9 @@ bash scripts/run_recon_full_controlled.sh
 - `data/interim/recon/recon_observation_features_full.csv`
 - `data/interim/recon/recon_observation_features_full_summary.json`
 - 汇总统计：`rows_written=6981`, `available_rows=3551`, `missing_rows=3430`
+ - 运行脚本现会自动同步 canonical：
+ - `data/interim/recon/recon_observation_features.csv`
+ - `data/interim/recon/recon_observation_features_summary.json`
 
 3. 分年覆盖（`REPNT2/REPNT3`）：
 - 2016: `0.566372`
@@ -295,7 +316,12 @@ bash scripts/run_recon_full_controlled.sh
 - 2024: `0.509646`
 - 2025: `0.330275`
 
-4. 进一步补跑建议（用于提升覆盖与特征维度）：
+4. 默认补全策略：
+- `scripts/run_recon_full_controlled.sh` 现默认使用 `REPNT2 REPNT3 AHONT1 AHOPN1`
+- 默认 `max_candidates_per_request=80`，在 `2016` 本地验证中仅比 `120` 少 `2` 条可用样本，但显著降低单请求候选报文数
+- 若历史 yearly summary 只覆盖了部分子目录，脚本会自动识别并对该年份重跑
+
+5. 进一步补跑建议（用于提升覆盖与特征维度）：
 ```bash
 RECON_PREFETCH_FIRST=0 \
 RECON_CACHE_ONLY=0 \
@@ -306,6 +332,6 @@ RECON_SLEEP_SEC=0.05 \
 RECON_HTTP_SLEEP_SEC=0.08 \
 RECON_MAX_RETRIES=1 \
 RECON_HTTP_TIMEOUT_SEC=8 \
-RECON_MAX_CANDIDATES=180 \
+RECON_MAX_CANDIDATES=120 \
 bash scripts/run_recon_full_controlled.sh
 ```

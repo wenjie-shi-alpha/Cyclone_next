@@ -226,7 +226,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-candidates-per-request",
         type=int,
-        default=120,
+        default=80,
         help="If >0, keep only nearest N catalog entries around each request time.",
     )
     return parser.parse_args()

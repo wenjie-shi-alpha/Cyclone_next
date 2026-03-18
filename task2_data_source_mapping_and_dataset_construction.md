@@ -622,7 +622,7 @@ data/
 | IBTrACS 聚合表 | `verification_targets` | `READY` | 维持回退链路并跟踪来源版本 | B-deck 缺失样本可稳定回退 |
 | GOES 特征表 | `now_inputs` 证据层 | `PARTIAL` | 先按 `invalid_qc`/`no_image` 双原因分层，再做定向补洞与 QC 口径复核 | GOES 缺口和口径问题均可解释，不回退启发式修复 |
 | ASCAT 风场表 | `now_inputs` 证据层 | `MISSING` | 建结构化风场摘要 | 可进入 prompt 的观测证据块 |
-| Recon/VDM 表 | `now_inputs` 证据层 | `PARTIAL` | 已切换本地执行（先跑 `REPNT2/REPNT3`，再补全扩展子目录） | 大西洋样本已有可用侦察证据行 |
+| Recon/VDM 表 | `now_inputs` 证据层 | `PARTIAL` | 已切换本地执行，默认补全 `REPNT2 REPNT3 AHONT1 AHOPN1` 并同步 canonical 文件 | 大西洋样本已有可用侦察证据行 |
 | ERA5 原始变量归档 | `now_inputs` 数值层 | `PARTIAL` | 落盘原始网格并重算特征 | 特征可复算且可追溯 |
 | EC 2022-2025 guidance | `guidance_inputs` | `PARTIAL` | 补齐缺失周期 | `EC-only` 样本覆盖提升 |
 | IBTrACS 原始文件快照 | 数据治理 | `PARTIAL` | 补齐原始文件和版本指纹 | GroundTruth 聚合可重建 |
@@ -684,23 +684,37 @@ data/
 - 按年份分块（`full_by_year`）+ 断点续跑；
 - 不可得样本进入缺失分层，不阻塞主建集。
 
-### 13.8 Recon 本地执行进展（2026-03-12）
+### 13.8 Recon 本地执行进展（2026-03-18 更新）
 1. 已完成改造：
 - Recon 提取从“远端运行”改为“本地运行”，执行入口为 `scripts/run_recon_full_controlled.sh`；
 - 增加请求限频参数：`--sleep-sec`（行级）、`--http-sleep-sec`（HTTP 级）；
-- 默认 Recon 子目录切到低频安全模式：`REPNT2 REPNT3`（可通过 `RECON_SUBDIRS` 扩展）。
+- Recon 默认补全子目录为：`REPNT2 REPNT3 AHONT1 AHOPN1`。
+- 若历史 yearly summary 只覆盖了部分子目录，`scripts/run_recon_full_controlled.sh` 会自动识别并对该年份重跑。
+- 合并完成后会同步 canonical：
+  - `data/interim/recon/recon_observation_features.csv`
+  - `data/interim/recon/recon_observation_features_summary.json`
 
 2. 本地连通性烟雾测试（已完成）：
 - 输出：`data/interim/recon/recon_observation_features_smoke.csv`
 - 汇总：`data/interim/recon/recon_observation_features_smoke_summary.json`
 - 结果：`rows_written=20`, `available_rows=14`, `missing_rows=6`
 
-3. 全量运行结果（2016-2025，已合并）：
+3. Baseline 全量运行结果（`REPNT2/REPNT3` 口径，2016-2025）：
 - 全量特征：`data/interim/recon/recon_observation_features_full.csv`
 - 全量汇总：`data/interim/recon/recon_observation_features_full_summary.json`
 - 汇总统计：`rows_written=6981`, `available_rows=3551`, `missing_rows=3430`
 
-4. 分年覆盖（`REPNT2/REPNT3` 口径）：
+4. 当前最佳补全结果（截至 `2026-03-18`）：
+- 已用 `scripts/run_recon_missing_secondary_fill.sh` 对 `AHONT1/AHOPN1` 做 targeted supplement，并将当前最佳结果同步到 canonical；
+- 当前 canonical 汇总：`rows_written=6981`, `available_rows=3561`, `missing_rows=3420`, `promoted_rows_total=10`；
+- 已完成 supplement 的年份：
+  - `2016`: `448 -> 457`（`+9`）
+  - `2017`: `413 -> 414`（`+1`）
+- 当前 `data/interim/recon/recon_observation_features_full_summary.json` 会标记：
+  - `years_using_supplemented_outputs=[2016, 2017]`
+  - `years_using_baseline_outputs=[2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]`
+
+5. Baseline 分年覆盖（`REPNT2/REPNT3` 口径）：
 - 2016: `448/791`（`0.566372`）
 - 2017: `413/745`（`0.554362`）
 - 2018: `392/957`（`0.409613`）
@@ -712,9 +726,11 @@ data/
 - 2024: `317/622`（`0.509646`）
 - 2025: `36/109`（`0.330275`）
 
-5. 后续动作：
+6. 后续动作：
 - 补跑 `AHONT1/AHOPN1`，恢复 HDOB/Dropsonde 扩展特征覆盖；
-- 按需提高 `max_candidates_per_request`（如 120 -> 180）做局部增益补跑。
+- 当前默认 `max_candidates_per_request=80`，在 `2016` 本地验证下仅比 `120` 少 `2` 条可用样本，可作为全量补跑默认值；
+- 若需进一步追求边际覆盖，可按需提高 `max_candidates_per_request`（如 80 -> 120）做局部增益补跑。
+- 对已有 `REPNT2/REPNT3` 基线结果，优先使用 `scripts/run_recon_missing_secondary_fill.sh` 只补 `missing_real_data` 的请求，再合并生成 supplemented 全量产物，避免整年全量重跑。
 
 ---
 

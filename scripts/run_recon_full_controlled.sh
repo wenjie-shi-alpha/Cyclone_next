@@ -17,18 +17,20 @@ YEAR_OUT_DIR="data/interim/recon/full_by_year/features"
 YEAR_SUMMARY_DIR="data/interim/recon/full_by_year/summaries"
 FINAL_OUT="data/interim/recon/recon_observation_features_full.csv"
 FINAL_SUMMARY="data/interim/recon/recon_observation_features_full_summary.json"
+CANONICAL_OUT="data/interim/recon/recon_observation_features.csv"
+CANONICAL_SUMMARY="data/interim/recon/recon_observation_features_summary.json"
 RECON_SLEEP_SEC="${RECON_SLEEP_SEC:-0.20}"
 RECON_HTTP_SLEEP_SEC="${RECON_HTTP_SLEEP_SEC:-0.08}"
 RECON_YEAR_COOLDOWN_SEC="${RECON_YEAR_COOLDOWN_SEC:-3}"
 RECON_MAX_RETRIES="${RECON_MAX_RETRIES:-3}"
 RECON_CACHE_DIR="${RECON_CACHE_DIR:-data/interim/recon/cache}"
 RECON_PREFETCH_FIRST="${RECON_PREFETCH_FIRST:-1}"
-RECON_SUBDIRS="${RECON_SUBDIRS:-REPNT2 REPNT3}"
+RECON_SUBDIRS="${RECON_SUBDIRS:-REPNT2 REPNT3 AHONT1 AHOPN1}"
 RECON_YEAR_START="${RECON_YEAR_START:-2016}"
 RECON_YEAR_END="${RECON_YEAR_END:-2025}"
 RECON_CACHE_ONLY="${RECON_CACHE_ONLY:-0}"
 RECON_HTTP_TIMEOUT_SEC="${RECON_HTTP_TIMEOUT_SEC:-20}"
-RECON_MAX_CANDIDATES="${RECON_MAX_CANDIDATES:-120}"
+RECON_MAX_CANDIDATES="${RECON_MAX_CANDIDATES:-80}"
 
 mkdir -p "$YEAR_MANIFEST_DIR" "$YEAR_OUT_DIR" "$YEAR_SUMMARY_DIR" "$RECON_CACHE_DIR"
 
@@ -58,6 +60,7 @@ RECON_SUBDIR_ARGS=()
 for subdir in "${RECON_SUBDIR_ARRAY[@]}"; do
   RECON_SUBDIR_ARGS+=(--subdir "$subdir")
 done
+REQUESTED_SUBDIRS_CSV="$(printf '%s\n' "${RECON_SUBDIR_ARRAY[@]}" | awk 'NF' | paste -sd, -)"
 
 RECON_CACHE_ONLY_ARGS=()
 if [[ "$RECON_CACHE_ONLY" == "1" ]]; then
@@ -119,13 +122,16 @@ fp = Path("$out_json")
 data = json.loads(fp.read_text(encoding="utf-8"))
 catalog_total = int(data.get("catalog_entries_total", 0) or 0)
 rows_written = int(data.get("rows_written", 0) or 0)
-raise SystemExit(0 if catalog_total > 0 and rows_written > 0 else 1)
+subdirs_used = {str(x).strip() for x in (data.get("subdirs_used") or []) if str(x).strip()}
+requested = {x.strip() for x in "$REQUESTED_SUBDIRS_CSV".split(",") if x.strip()}
+has_requested_subdirs = requested.issubset(subdirs_used)
+raise SystemExit(0 if catalog_total > 0 and rows_written > 0 and has_requested_subdirs else 1)
 PY
     then
-      echo "[INFO] year=${year} already completed with non-empty catalog, skip"
+      echo "[INFO] year=${year} already completed with requested subdirs, skip"
       continue
     else
-      echo "[WARN] year=${year} existing output looks invalid (empty catalog), rerun"
+      echo "[WARN] year=${year} existing output is incomplete for requested subdirs or has empty catalog, rerun"
     fi
   fi
 
@@ -215,3 +221,8 @@ print("missing_rows:", missing_rows)
 PY
 
 echo "[INFO] Recon full controlled run completed."
+cp "$FINAL_OUT" "$CANONICAL_OUT"
+cp "$FINAL_SUMMARY" "$CANONICAL_SUMMARY"
+echo "[INFO] canonical Recon files synced:"
+echo "  $CANONICAL_OUT"
+echo "  $CANONICAL_SUMMARY"
