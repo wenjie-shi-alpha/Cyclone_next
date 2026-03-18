@@ -1,0 +1,43 @@
+# Python caches and build artifacts
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tooling and editor files
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# OS and temporary files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.tmp
+*.log
+wget-log
+
+# Raw/derived datasets and large generated artifacts
+data/raw/
+data/interim/
+data/processed/
+noaa/
+CDS_real/
+GroundTruth_Cyclones/
+GFS_forecast/
+HRES_forecast/
+ascat_request_manifest.csv
+recon_request_manifest.csv
