@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Split the ASCAT full request manifest into yearly manifest shards."""
 
-from __future__ import annotations
-
 import argparse
 import csv
 from pathlib import Path

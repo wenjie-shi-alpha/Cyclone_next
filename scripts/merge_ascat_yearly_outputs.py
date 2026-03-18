@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Merge yearly ASCAT outputs into full and canonical tables."""
 
-from __future__ import annotations
-
 import argparse
 import csv
 import json

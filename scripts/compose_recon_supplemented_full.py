@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-from __future__ import annotations
 
 import argparse
 import csv
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,7 +74,7 @@ def main() -> int:
     years_using_merged: List[int] = []
     years_using_base: List[int] = []
     yearly_sources: Dict[str, Dict[str, Any]] = {}
-    fieldnames: List[str] | None = None
+    fieldnames = None  # type: Optional[List[str]]
 
     with args.out_csv.open("w", encoding="utf-8", newline="") as fw:
         writer = None

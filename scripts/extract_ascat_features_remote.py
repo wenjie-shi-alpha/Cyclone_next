@@ -7,8 +7,6 @@ Design goals:
 3. Keep failure-tolerant behavior (one failed request should not stop the run).
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import inspect
@@ -16,7 +14,6 @@ import json
 import math
 import os
 import time
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
@@ -65,14 +62,22 @@ OUTPUT_FIELDS = [
 ]
 
 
-@dataclass
 class RequestRow:
-    request_id: str
-    issue_time_utc: str
-    issue_dt: datetime
-    lat: float
-    lon: float
-    raw: Dict[str, str]
+    def __init__(
+        self,
+        request_id: str,
+        issue_time_utc: str,
+        issue_dt: datetime,
+        lat: float,
+        lon: float,
+        raw: Dict[str, str],
+    ) -> None:
+        self.request_id = request_id
+        self.issue_time_utc = issue_time_utc
+        self.issue_dt = issue_dt
+        self.lat = lat
+        self.lon = lon
+        self.raw = raw
 
 
 def parse_args() -> argparse.Namespace:
@@ -229,6 +234,16 @@ def env_first(*names: str) -> str:
     return ""
 
 
+def env_first_float(*names: str) -> Optional[float]:
+    raw = env_first(*names)
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ValueError(f"invalid float environment value: {raw}") from exc
+
+
 def resolve_runtime_config(args: argparse.Namespace) -> argparse.Namespace:
     args.username = first_nonempty(
         args.username,
@@ -264,6 +279,9 @@ def resolve_runtime_config(args: argparse.Namespace) -> argparse.Namespace:
             "COPERNICUSMARINE_SERVICE",
         ),
     )
+    pause_sec = env_first_float("ASCAT_REQUEST_PAUSE_SEC", "ASCAT_SLEEP_SEC")
+    if pause_sec is not None:
+        args.sleep_sec = pause_sec
     tmp_dir_env = env_first("ASCAT_TMP_DIR")
     if tmp_dir_env and str(args.tmp_dir) == "/tmp/ascat_subset_tmp":
         args.tmp_dir = Path(tmp_dir_env)

@@ -115,6 +115,7 @@ sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/sc
 - `data/interim/ascat/ascat_observation_features.csv`
 - `data/interim/ascat/ascat_observation_features_summary.json`
 4. 建议优先使用 `ASCAT_CREDENTIALS_FILE` 或已配置的 Copernicus Marine 默认认证；若必须使用明文环境变量，可在 `sbatch --export` 中传 `ASCAT_USERNAME` / `ASCAT_PASSWORD`。
+5. Sherlock 不允许 batch 脚本里出现显式 `sleep`。当前 `slurm/run_ascat_sherlock_array.slurm` 已移除 shell 级 cooldown；若需调小请求频率，请在 `sbatch --export` 中传 `ASCAT_REQUEST_PAUSE_SEC`，由 Python 提取器内部读取。
 
 ---
 

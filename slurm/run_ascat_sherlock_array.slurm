@@ -6,8 +6,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
-#SBATCH --time=72:00:00
+#SBATCH --mem=200G
+#SBATCH --time=36:00:00
 #SBATCH --qos=normal
 #SBATCH --mail-type=END,FAIL
 
@@ -45,8 +45,7 @@ ASCAT_ONLY_WITH_STORM_ID="${ASCAT_ONLY_WITH_STORM_ID:-1}"
 ASCAT_KEEP_TEMP_FILES="${ASCAT_KEEP_TEMP_FILES:-0}"
 ASCAT_MAX_ROWS="${ASCAT_MAX_ROWS:-0}"
 ASCAT_MAX_RETRIES="${ASCAT_MAX_RETRIES:-3}"
-ASCAT_SLEEP_SEC="${ASCAT_SLEEP_SEC:-0.05}"
-ASCAT_YEAR_COOLDOWN_SEC="${ASCAT_YEAR_COOLDOWN_SEC:-2}"
+ASCAT_REQUEST_PAUSE_SEC="${ASCAT_REQUEST_PAUSE_SEC:-0.05}"
 ASCAT_WINDOW_BEFORE_MIN="${ASCAT_WINDOW_BEFORE_MIN:-180}"
 ASCAT_WINDOW_AFTER_MIN="${ASCAT_WINDOW_AFTER_MIN:-180}"
 ASCAT_INNER_RADIUS_KM="${ASCAT_INNER_RADIUS_KM:-200.0}"
@@ -87,6 +86,14 @@ resolve_python_runner() {
     return
   fi
   if [[ -n "$ENV_PREFIX" && -d "$ENV_PREFIX" ]]; then
+    if [[ -x "$ENV_PREFIX/bin/python" ]]; then
+      PY_RUN=("$ENV_PREFIX/bin/python")
+      return
+    fi
+    if [[ -x "$ENV_PREFIX/bin/python3" ]]; then
+      PY_RUN=("$ENV_PREFIX/bin/python3")
+      return
+    fi
     if command -v conda >/dev/null 2>&1; then
       PY_RUN=(conda run -p "$ENV_PREFIX" python)
       return
@@ -120,6 +127,27 @@ resolve_python_runner() {
   fi
   echo "❌ no usable python interpreter found" >&2
   exit 2
+}
+
+validate_python_runner() {
+  local version_output
+  version_output="$("${PY_RUN[@]}" - <<'PY'
+import sys
+print("sys_executable=" + sys.executable)
+print("sys_version=" + sys.version.replace("\n", " "))
+if sys.version_info < (3, 8):
+    raise SystemExit(86)
+PY
+)" || {
+    local exit_code=$?
+    if [[ "$exit_code" -eq 86 ]]; then
+      echo "❌ resolved python is too old; require >= 3.8" >&2
+    else
+      echo "❌ failed to execute resolved python: ${PY_RUN[*]}" >&2
+    fi
+    exit "$exit_code"
+  }
+  echo "$version_output"
 }
 
 parse_year_list() {
@@ -179,7 +207,6 @@ build_extractor_cmd() {
     --assumed-cell-km "$ASCAT_ASSUMED_CELL_KM"
     --tmp-dir "$tmp_dir"
     --max-retries "$ASCAT_MAX_RETRIES"
-    --sleep-sec "$ASCAT_SLEEP_SEC"
   )
 
   if [[ "$ASCAT_ONLY_WITH_STORM_ID" == "1" ]]; then
@@ -253,11 +280,13 @@ write_status "running"
 
 ulimit -n 4096 || true
 export PYTHONUNBUFFERED=1
+export ASCAT_REQUEST_PAUSE_SEC
 
 echo "=== ASCAT Sherlock Full Run ==="
 echo "HOST=$(hostname)"
 echo "PROJECT_DIR=$PROJECT_DIR"
 echo "PYTHON=${PY_RUN[*]}"
+validate_python_runner
 echo "YEAR_LIST=$(IFS=,; echo "${YEAR_LIST[*]}")"
 echo "DRY_RUN=$ASCAT_DRY_RUN"
 echo "FORCE_RERUN=$FORCE_RERUN"
@@ -324,9 +353,7 @@ for year in "${YEAR_LIST[@]}"; do
   if [[ "$ASCAT_DRY_RUN" != "1" ]]; then
     rm -rf "$TMP_DIR" || true
   fi
-
-  echo "[INFO] year=$year done. cooldown ${ASCAT_YEAR_COOLDOWN_SEC}s..."
-  sleep "$ASCAT_YEAR_COOLDOWN_SEC"
+  echo "[INFO] year=$year done."
 done
 
 ACTIVE_YEAR=""

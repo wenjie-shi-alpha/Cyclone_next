@@ -7,12 +7,9 @@ The script follows the same manifest style as GOES:
 - optional storm_id backfill via ATCF crosswalk
 """
 
-from __future__ import annotations
-
 import argparse
 import csv
 import re
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple
@@ -62,22 +59,38 @@ OUT_FIELDS = [
 ]
 
 
-@dataclass
 class ManifestRow:
-    request_id: str
-    storm_id: str
-    storm_id_match_status: str
-    atcf_storm_id: str
-    basin: str
-    storm_name: str
-    advisory_no: str
-    issue_time_utc: str
-    center_obs_day: str
-    center_obs_hhmmz: str
-    lat: float
-    lon: float
-    source_file: str
-    is_recon_candidate: int
+    def __init__(
+        self,
+        request_id: str,
+        storm_id: str,
+        storm_id_match_status: str,
+        atcf_storm_id: str,
+        basin: str,
+        storm_name: str,
+        advisory_no: str,
+        issue_time_utc: str,
+        center_obs_day: str,
+        center_obs_hhmmz: str,
+        lat: float,
+        lon: float,
+        source_file: str,
+        is_recon_candidate: int,
+    ) -> None:
+        self.request_id = request_id
+        self.storm_id = storm_id
+        self.storm_id_match_status = storm_id_match_status
+        self.atcf_storm_id = atcf_storm_id
+        self.basin = basin
+        self.storm_name = storm_name
+        self.advisory_no = advisory_no
+        self.issue_time_utc = issue_time_utc
+        self.center_obs_day = center_obs_day
+        self.center_obs_hhmmz = center_obs_hhmmz
+        self.lat = lat
+        self.lon = lon
+        self.source_file = source_file
+        self.is_recon_candidate = is_recon_candidate
 
     def to_dict(self) -> Dict[str, object]:
         return {

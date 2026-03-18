@@ -1,5 +1,5 @@
 state=finished
-updated_utc=2026-03-18T10:16:43Z
+updated_utc=2026-03-18T14:15:03Z
 job_id=
 project_dir=/root/Cyclone_next
 year_start=2025
@@ -8,6 +8,6 @@ active_year=
 completed_years=2025
 skipped_years=
 run_years=2025
-full_manifest=/tmp/ascat_single_validate/ascat_request_manifest_full.csv
-final_out=/tmp/ascat_single_validate/ascat_observation_features_full.csv
-final_summary=/tmp/ascat_single_validate/ascat_observation_features_full_summary.json
+full_manifest=/root/Cyclone_next/data/interim/ascat/ascat_request_manifest_full.csv
+final_out=/root/Cyclone_next/data/interim/ascat/ascat_observation_features_full.csv
+final_summary=/root/Cyclone_next/data/interim/ascat/ascat_observation_features_full_summary.json
