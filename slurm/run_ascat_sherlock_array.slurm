@@ -14,14 +14,15 @@
 set -euo pipefail
 
 # Single-entry Sherlock ASCAT pipeline.
+# This Sherlock path expects a prebuilt ASCAT full manifest synced from local.
 # Submit directly with:
-#   sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/scratch/users/$USER/conda/envs/cyclone,ASCAT_CREDENTIALS_FILE=$HOME/.config/copernicusmarine/credentials slurm/run_ascat_sherlock_array.slurm
+#   sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/scratch/users/$USER/conda/envs/cyclone,ASCAT_CREDENTIALS_FILE=$HOME/.config/copernicusmarine/credentials,FULL_MANIFEST=/scratch/users/$USER/Cyclone_next/data/interim/ascat/ascat_request_manifest_full.csv slurm/run_ascat_sherlock_array.slurm
 
 DEFAULT_PROJECT_DIR="/scratch/users/${USER}/Cyclone_next"
+DEFAULT_ENV_PREFIX="/scratch/users/${USER}/conda/envs/cyclone"
 PROJECT_DIR="${PROJECT_DIR:-$DEFAULT_PROJECT_DIR}"
 
 FULL_MANIFEST="${FULL_MANIFEST:-$PROJECT_DIR/data/interim/ascat/ascat_request_manifest_full.csv}"
-RECON_MANIFEST_DUMMY="${RECON_MANIFEST_DUMMY:-$PROJECT_DIR/data/interim/recon/recon_request_manifest_full.csv}"
 YEAR_MANIFEST_DIR="${YEAR_MANIFEST_DIR:-$PROJECT_DIR/data/interim/ascat/full_by_year/manifests}"
 YEAR_OUT_DIR="${YEAR_OUT_DIR:-$PROJECT_DIR/data/interim/ascat/full_by_year/features}"
 YEAR_SUMMARY_DIR="${YEAR_SUMMARY_DIR:-$PROJECT_DIR/data/interim/ascat/full_by_year/summaries}"
@@ -30,7 +31,7 @@ FINAL_SUMMARY="${FINAL_SUMMARY:-$PROJECT_DIR/data/interim/ascat/ascat_observatio
 CANONICAL_OUT="${CANONICAL_OUT:-$PROJECT_DIR/data/interim/ascat/ascat_observation_features.csv}"
 CANONICAL_SUMMARY="${CANONICAL_SUMMARY:-$PROJECT_DIR/data/interim/ascat/ascat_observation_features_summary.json}"
 
-ENV_PREFIX="${ENV_PREFIX:-}"
+ENV_PREFIX="${ENV_PREFIX:-$DEFAULT_ENV_PREFIX}"
 VENV_DIR="${VENV_DIR:-$PROJECT_DIR/.venv}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
@@ -72,7 +73,7 @@ if ! command -v module >/dev/null 2>&1; then
 fi
 
 if command -v module >/dev/null 2>&1; then
-  for mod in mamba micromamba miniconda3 anaconda3 miniforge3 mambaforge python; do
+  for mod in mamba micromamba miniconda3 anaconda3 miniforge3 mambaforge; do
     if module --ignore_cache load "$mod" >/dev/null 2>&1 || module load "$mod" >/dev/null 2>&1; then
       echo "Loaded module: $mod"
       break
@@ -85,28 +86,32 @@ resolve_python_runner() {
     PY_RUN=("$PYTHON_BIN")
     return
   fi
-  if [[ -n "$ENV_PREFIX" && -d "$ENV_PREFIX" ]]; then
-    if [[ -x "$ENV_PREFIX/bin/python" ]]; then
-      PY_RUN=("$ENV_PREFIX/bin/python")
+  if [[ ! -d "$ENV_PREFIX" ]]; then
+    echo "❌ ENV_PREFIX not found: $ENV_PREFIX" >&2
+    exit 2
+  fi
+  if [[ -n "$ENV_PREFIX" ]]; then
+    if command -v conda >/dev/null 2>&1; then
+      PY_RUN=(conda run -p "$ENV_PREFIX" python3)
+      return
+    fi
+    if command -v mamba >/dev/null 2>&1; then
+      PY_RUN=(mamba run -p "$ENV_PREFIX" python3)
+      return
+    fi
+    if command -v micromamba >/dev/null 2>&1; then
+      PY_RUN=(micromamba run -p "$ENV_PREFIX" python3)
       return
     fi
     if [[ -x "$ENV_PREFIX/bin/python3" ]]; then
       PY_RUN=("$ENV_PREFIX/bin/python3")
       return
     fi
-    if command -v conda >/dev/null 2>&1; then
-      PY_RUN=(conda run -p "$ENV_PREFIX" python)
+    if [[ -x "$ENV_PREFIX/bin/python" ]]; then
+      PY_RUN=("$ENV_PREFIX/bin/python")
       return
     fi
-    if command -v mamba >/dev/null 2>&1; then
-      PY_RUN=(mamba run -p "$ENV_PREFIX" python)
-      return
-    fi
-    if command -v micromamba >/dev/null 2>&1; then
-      PY_RUN=(micromamba run -p "$ENV_PREFIX" python)
-      return
-    fi
-    echo "❌ ENV_PREFIX set but no conda/mamba/micromamba found: $ENV_PREFIX" >&2
+    echo "❌ Need conda/mamba/micromamba or a direct python binary under ENV_PREFIX: $ENV_PREFIX" >&2
     exit 2
   fi
   if [[ -n "$VENV_DIR" && -x "$VENV_DIR/bin/python" ]]; then
@@ -115,14 +120,6 @@ resolve_python_runner() {
   fi
   if [[ -x "$PROJECT_DIR/.venv/bin/python" ]]; then
     PY_RUN=("$PROJECT_DIR/.venv/bin/python")
-    return
-  fi
-  if command -v python3 >/dev/null 2>&1; then
-    PY_RUN=(python3)
-    return
-  fi
-  if command -v python >/dev/null 2>&1; then
-    PY_RUN=(python)
     return
   fi
   echo "❌ no usable python interpreter found" >&2
@@ -285,6 +282,8 @@ export ASCAT_REQUEST_PAUSE_SEC
 echo "=== ASCAT Sherlock Full Run ==="
 echo "HOST=$(hostname)"
 echo "PROJECT_DIR=$PROJECT_DIR"
+echo "FULL_MANIFEST=$FULL_MANIFEST"
+echo "ENV_PREFIX=$ENV_PREFIX"
 echo "PYTHON=${PY_RUN[*]}"
 validate_python_runner
 echo "YEAR_LIST=$(IFS=,; echo "${YEAR_LIST[*]}")"
@@ -294,13 +293,26 @@ echo "FORCE_REBUILD_MANIFEST=$FORCE_REBUILD_MANIFEST"
 
 cd "$PROJECT_DIR"
 
-if [[ "$FORCE_REBUILD_MANIFEST" == "1" || ! -f "$FULL_MANIFEST" ]]; then
-  echo "[INFO] building ASCAT full manifest: years=${YEAR_START}-${YEAR_END}"
-  "${PY_RUN[@]}" scripts/build_obs_request_manifest.py \
-    --year-start "$YEAR_START" \
-    --year-end "$YEAR_END" \
-    --ascat-out-csv "$FULL_MANIFEST" \
-    --recon-out-csv "$RECON_MANIFEST_DUMMY"
+if [[ "$FORCE_REBUILD_MANIFEST" == "1" ]]; then
+  echo "❌ Remote manifest rebuild is disabled on Sherlock." >&2
+  echo "   Commit and push data/interim/ascat/ascat_request_manifest_full.csv first," >&2
+  echo "   then clone or refresh the Sherlock checkout and resubmit with:" >&2
+  echo "   FULL_MANIFEST=$FULL_MANIFEST" >&2
+  exit 4
+fi
+
+if [[ ! -f "$FULL_MANIFEST" ]]; then
+  echo "❌ FULL_MANIFEST not found: $FULL_MANIFEST" >&2
+  echo "   Clone only fetches git-tracked files." >&2
+  echo "   Ensure data/interim/ascat/ascat_request_manifest_full.csv is committed and pushed," >&2
+  echo "   then refresh the Sherlock checkout before resubmitting." >&2
+  exit 4
+fi
+
+if ! manifest_has_rows "$FULL_MANIFEST"; then
+  echo "❌ FULL_MANIFEST exists but has no data rows: $FULL_MANIFEST" >&2
+  echo "   Rebuild the manifest locally, resync it to Sherlock, then resubmit." >&2
+  exit 4
 fi
 
 echo "[INFO] splitting ASCAT full manifest by year..."

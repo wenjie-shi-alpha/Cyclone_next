@@ -662,9 +662,10 @@ data/
 1. 本地仅生成请求清单：
 - `data/interim/ascat/ascat_request_manifest.csv`
 - `data/interim/recon/recon_request_manifest.csv`
+- Sherlock 若仅通过 `git clone`/`git pull` 获取项目，则需先把 `data/interim/ascat/ascat_request_manifest_full.csv` 纳入版本控制并推送
 
 2. 远端（Sherlock Slurm 单一入口主路径，CDS JupyterLab 备选）完成 ASCAT 特征提取：
-- 输入：Copernicus Marine ASCAT L3（NRT + Multi-year）
+- 输入：Copernicus Marine ASCAT L3（NRT + Multi-year）+ 已提交到仓库的 `data/interim/ascat/ascat_request_manifest_full.csv`
 - 输出：`data/interim/ascat/ascat_observation_features.csv`
 - 汇总：`data/interim/ascat/ascat_observation_features_summary.json`
 

@@ -97,13 +97,13 @@ python3 scripts/extract_ascat_features_remote.py \
 
 Sherlock 提交入口（单一 `slurm` 脚本）：
 ```bash
-sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/scratch/users/$USER/conda/envs/cyclone,ASCAT_CREDENTIALS_FILE=$HOME/.config/copernicusmarine/credentials,YEAR_START=2016,YEAR_END=2025 \
+sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/scratch/users/$USER/conda/envs/cyclone,FULL_MANIFEST=/scratch/users/$USER/Cyclone_next/data/interim/ascat/ascat_request_manifest_full.csv,ASCAT_CREDENTIALS_FILE=$HOME/.config/copernicusmarine/credentials,YEAR_START=2016,YEAR_END=2025 \
   slurm/run_ascat_sherlock_array.slurm
 ```
 
 说明：
 1. `slurm/run_ascat_sherlock_array.slurm` 现在是单一入口脚本，一个作业内完成：
-- 生成 ASCAT full manifest
+- 读取本地预生成并已同步到 Sherlock 的 ASCAT full manifest
 - 按年切分 manifest
 - 逐年请求/提取 ASCAT 特征
 - merge yearly outputs
@@ -116,6 +116,8 @@ sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/sc
 - `data/interim/ascat/ascat_observation_features_summary.json`
 4. 建议优先使用 `ASCAT_CREDENTIALS_FILE` 或已配置的 Copernicus Marine 默认认证；若必须使用明文环境变量，可在 `sbatch --export` 中传 `ASCAT_USERNAME` / `ASCAT_PASSWORD`。
 5. Sherlock 不允许 batch 脚本里出现显式 `sleep`。当前 `slurm/run_ascat_sherlock_array.slurm` 已移除 shell 级 cooldown；若需调小请求频率，请在 `sbatch --export` 中传 `ASCAT_REQUEST_PAUSE_SEC`，由 Python 提取器内部读取。
+6. Sherlock 路径默认不再重建 manifest；若 `FULL_MANIFEST` 不存在会直接失败，并提示先把 `data/interim/ascat/ascat_request_manifest_full.csv` 提交进仓库。
+7. 当前 `.gitignore` 已对 `data/interim/ascat/ascat_request_manifest_full.csv` 做了例外放行；若 Sherlock 只通过 `git clone`/`git pull` 获取项目，请确保该文件已经 `git add`、提交并推送。
 
 ---
 

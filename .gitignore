@@ -32,7 +32,10 @@ wget-log
 
 # Raw/derived datasets and large generated artifacts
 data/raw/
-data/interim/
+data/interim/*
+!data/interim/ascat/
+data/interim/ascat/*
+!data/interim/ascat/ascat_request_manifest_full.csv
 data/processed/
 noaa/
 CDS_real/
