@@ -13,6 +13,7 @@ import inspect
 import json
 import math
 import os
+import signal
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -78,6 +79,11 @@ class RequestRow:
         self.lat = lat
         self.lon = lon
         self.raw = raw
+
+
+def log_progress(message: str) -> None:
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    print(f"[{stamp}] {message}", flush=True)
 
 
 def parse_args() -> argparse.Namespace:
@@ -187,6 +193,12 @@ def parse_args() -> argparse.Namespace:
         help="Sleep between requests to reduce throttling.",
     )
     parser.add_argument(
+        "--subset-timeout-sec",
+        type=float,
+        default=300.0,
+        help="Hard timeout for each Copernicus Marine subset call; <=0 disables the timeout.",
+    )
+    parser.add_argument(
         "--username",
         type=str,
         default="",
@@ -244,6 +256,16 @@ def env_first_float(*names: str) -> Optional[float]:
         raise ValueError(f"invalid float environment value: {raw}") from exc
 
 
+def env_first_int(*names: str) -> Optional[int]:
+    raw = env_first(*names)
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise ValueError(f"invalid integer environment value: {raw}") from exc
+
+
 def resolve_runtime_config(args: argparse.Namespace) -> argparse.Namespace:
     args.username = first_nonempty(
         args.username,
@@ -282,6 +304,9 @@ def resolve_runtime_config(args: argparse.Namespace) -> argparse.Namespace:
     pause_sec = env_first_float("ASCAT_REQUEST_PAUSE_SEC", "ASCAT_SLEEP_SEC")
     if pause_sec is not None:
         args.sleep_sec = pause_sec
+    subset_timeout_sec = env_first_int("ASCAT_SUBSET_TIMEOUT_SEC")
+    if subset_timeout_sec is not None:
+        args.subset_timeout_sec = float(subset_timeout_sec)
     tmp_dir_env = env_first("ASCAT_TMP_DIR")
     if tmp_dir_env and str(args.tmp_dir) == "/tmp/ascat_subset_tmp":
         args.tmp_dir = Path(tmp_dir_env)
@@ -412,6 +437,22 @@ def init_optional_deps() -> Tuple[Any, Any, Any]:
             "Install via: pip install copernicusmarine"
         ) from exc
     return np, xr, copernicusmarine
+
+
+def run_with_timeout(timeout_sec: float, func: Any, *args: Any, **kwargs: Any) -> Any:
+    if timeout_sec <= 0 or os.name == "nt" or not hasattr(signal, "setitimer"):
+        return func(*args, **kwargs)
+
+    def _timeout_handler(signum: int, frame: Any) -> None:
+        raise TimeoutError(f"subset call exceeded timeout_sec={timeout_sec}")
+
+    previous_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+    signal.setitimer(signal.ITIMER_REAL, timeout_sec)
+    try:
+        return func(*args, **kwargs)
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, previous_handler)
 
 
 def call_subset(
@@ -794,7 +835,14 @@ def process_request(
         last_err = ""
         for attempt in range(1, max(1, args.max_retries) + 1):
             try:
-                path = call_subset(
+                log_progress(
+                    "subset_start "
+                    f"request_id={req.request_id} issue_time_utc={req.issue_time_utc} "
+                    f"dataset_id={ds_id} attempt={attempt}/{max(1, args.max_retries)}"
+                )
+                path = run_with_timeout(
+                    float(args.subset_timeout_sec),
+                    call_subset,
                     copernicusmarine=copernicusmarine,
                     dataset_id=ds_id,
                     out_file=tmp_file,
@@ -823,9 +871,19 @@ def process_request(
                         path.unlink()
                     except Exception:
                         pass
+                log_progress(
+                    "subset_done "
+                    f"request_id={req.request_id} dataset_id={ds_id} "
+                    f"status=available tmp_file={path}"
+                )
                 return row
             except Exception as exc:
                 last_err = f"{type(exc).__name__}:{str(exc)[:200]}"
+                log_progress(
+                    "subset_failed "
+                    f"request_id={req.request_id} dataset_id={ds_id} "
+                    f"attempt={attempt}/{max(1, args.max_retries)} error={last_err}"
+                )
                 if attempt < args.max_retries:
                     time.sleep(min(5.0, 0.8 * attempt))
                 continue
@@ -863,6 +921,7 @@ def run(args: argparse.Namespace, rows: List[RequestRow], dataset_ids: List[str]
         "manifest_csv": str(args.manifest_csv),
         "out_csv": str(args.out_csv),
         "summary_json": str(args.summary_json),
+        "subset_timeout_sec": args.subset_timeout_sec,
         "dataset_ids_requested": args.dataset_ids if args.dataset_ids else DEFAULT_DATASET_IDS,
         "dataset_ids_used": dataset_ids,
         "requests_total": len(rows),
@@ -881,15 +940,17 @@ def run(args: argparse.Namespace, rows: List[RequestRow], dataset_ids: List[str]
     try:
         np, xr, copernicusmarine = init_optional_deps()
     except Exception as exc:
-        print(f"[WARN] dependency init failed: {type(exc).__name__}: {str(exc)[:260]}")
+        log_progress(f"[WARN] dependency init failed: {type(exc).__name__}: {str(exc)[:260]}")
         with args.out_csv.open("w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDS)
             writer.writeheader()
+            f.flush()
             for req in rows:
                 row = failed_row(req, args, f"runtime_dependency_error:{type(exc).__name__}")
                 writer.writerow({k: row.get(k, "") for k in OUTPUT_FIELDS})
                 summary["rows_written"] += 1
                 summary["missing_rows"] += 1
+            f.flush()
         args.summary_json.parent.mkdir(parents=True, exist_ok=True)
         args.summary_json.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         return summary
@@ -917,7 +978,12 @@ def run(args: argparse.Namespace, rows: List[RequestRow], dataset_ids: List[str]
     with args.out_csv.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=OUTPUT_FIELDS)
         writer.writeheader()
+        f.flush()
         for i, req in enumerate(rows, start=1):
+            log_progress(
+                f"request_start {i}/{len(rows)} request_id={req.request_id} "
+                f"issue_time_utc={req.issue_time_utc}"
+            )
             row = process_request(
                 np=np,
                 xr=xr,
@@ -928,9 +994,14 @@ def run(args: argparse.Namespace, rows: List[RequestRow], dataset_ids: List[str]
             )
             out_row = {k: row.get(k, "") for k in OUTPUT_FIELDS}
             writer.writerow(out_row)
+            f.flush()
             update_summary(out_row)
+            log_progress(
+                f"request_done {i}/{len(rows)} request_id={req.request_id} "
+                f"status={out_row.get('ascat_status', '')} dataset_id={out_row.get('ascat_dataset_id', '')}"
+            )
             if i % 50 == 0 or i == len(rows):
-                print(f"processed {i}/{len(rows)}")
+                log_progress(f"processed {i}/{len(rows)}")
             time.sleep(max(0.0, args.sleep_sec))
 
     if offsets:
@@ -965,19 +1036,20 @@ def main() -> int:
     if not rows:
         raise RuntimeError("no valid request rows found in manifest")
 
-    print("manifest:", args.manifest_csv)
-    print("rows_to_process:", len(rows))
-    print("dataset_ids_requested:", dataset_ids)
-    print("tmp_dir:", args.tmp_dir)
+    log_progress(f"manifest: {args.manifest_csv}")
+    log_progress(f"rows_to_process: {len(rows)}")
+    log_progress(f"dataset_ids_requested: {dataset_ids}")
+    log_progress(f"tmp_dir: {args.tmp_dir}")
+    log_progress(f"subset_timeout_sec: {args.subset_timeout_sec}")
     if args.dry_run:
         return 0
 
     summary = run(args=args, rows=rows, dataset_ids=dataset_ids)
-    print(args.out_csv)
-    print(args.summary_json)
-    print("rows_written:", summary["rows_written"])
-    print("available_rows:", summary["available_rows"])
-    print("missing_rows:", summary["missing_rows"])
+    log_progress(str(args.out_csv))
+    log_progress(str(args.summary_json))
+    log_progress(f"rows_written: {summary['rows_written']}")
+    log_progress(f"available_rows: {summary['available_rows']}")
+    log_progress(f"missing_rows: {summary['missing_rows']}")
     return 0
 
 

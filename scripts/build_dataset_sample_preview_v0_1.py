@@ -1650,6 +1650,15 @@ def build_sample() -> Dict[str, Any]:
         },
     }
 
+    # Extended leakage audit via data_leakage_prevention module (optional)
+    try:
+        from data_leakage_prevention import InputLeakageAuditor as _InputLeakageAuditor
+        _auditor = _InputLeakageAuditor(groundtruth_csv=BASE / "GroundTruth_Cyclones" / "matched_cyclone_tracks.csv")
+        _extended_audit = _auditor.audit_sample(sample)
+        sample["leakage_audit"]["extended_checks"] = _extended_audit
+    except ImportError:
+        pass
+
     return sample
 
 

@@ -97,8 +97,18 @@ python3 scripts/extract_ascat_features_remote.py \
 
 Sherlock 提交入口（单一 `slurm` 脚本）：
 ```bash
-sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/scratch/users/$USER/conda/envs/cyclone,FULL_MANIFEST=/scratch/users/$USER/Cyclone_next/data/interim/ascat/ascat_request_manifest_full.csv,ASCAT_CREDENTIALS_FILE=$HOME/.config/copernicusmarine/credentials,YEAR_START=2016,YEAR_END=2025 \
+sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/scratch/users/$USER/conda/envs/cyclone,FULL_MANIFEST=/scratch/users/$USER/Cyclone_next/data/interim/ascat/ascat_request_manifest_full.csv,YEAR_START=2016,YEAR_END=2025 \
   slurm/run_ascat_sherlock_array.slurm
+```
+
+项目内私有认证文件（推荐，勿提交到 git）：
+```bash
+mkdir -p .secrets
+cat > .secrets/copernicusmarine.env <<'EOF'
+ASCAT_USERNAME="<your_copernicus_username>"
+ASCAT_PASSWORD="<your_copernicus_password>"
+EOF
+chmod 600 .secrets/copernicusmarine.env
 ```
 
 说明：
@@ -107,17 +117,21 @@ sbatch --export=ALL,PROJECT_DIR=/scratch/users/$USER/Cyclone_next,ENV_PREFIX=/sc
 - 按年切分 manifest
 - 逐年请求/提取 ASCAT 特征
 - merge yearly outputs
-- 同步 canonical 文件
+- 默认写入独立的 `RUN_TAG` 子目录
 2. 脚本内部仍按年 checkpoint，因此中断后可重提同一个 `slurm` 脚本继续跑。
-3. 最终会同步：
-- `data/interim/ascat/ascat_observation_features_full.csv`
-- `data/interim/ascat/ascat_observation_features_full_summary.json`
-- `data/interim/ascat/ascat_observation_features.csv`
-- `data/interim/ascat/ascat_observation_features_summary.json`
-4. 建议优先使用 `ASCAT_CREDENTIALS_FILE` 或已配置的 Copernicus Marine 默认认证；若必须使用明文环境变量，可在 `sbatch --export` 中传 `ASCAT_USERNAME` / `ASCAT_PASSWORD`。
-5. Sherlock 不允许 batch 脚本里出现显式 `sleep`。当前 `slurm/run_ascat_sherlock_array.slurm` 已移除 shell 级 cooldown；若需调小请求频率，请在 `sbatch --export` 中传 `ASCAT_REQUEST_PAUSE_SEC`，由 Python 提取器内部读取。
-6. Sherlock 路径默认不再重建 manifest；若 `FULL_MANIFEST` 不存在会直接失败，并提示先把 `data/interim/ascat/ascat_request_manifest_full.csv` 提交进仓库。
-7. 当前 `.gitignore` 已对 `data/interim/ascat/ascat_request_manifest_full.csv` 做了例外放行；若 Sherlock 只通过 `git clone`/`git pull` 获取项目，请确保该文件已经 `git add`、提交并推送。
+3. 每次提交默认会生成唯一 `RUN_TAG`，并把结果写到：
+- `data/interim/ascat/runs/<RUN_TAG>/manifests/`
+- `data/interim/ascat/runs/<RUN_TAG>/features/`
+- `data/interim/ascat/runs/<RUN_TAG>/summaries/`
+- `data/interim/ascat/runs/<RUN_TAG>/ascat_observation_features_full.csv`
+- `data/interim/ascat/runs/<RUN_TAG>/ascat_observation_features_full_summary.json`
+- `data/interim/ascat/runs/<RUN_TAG>/ascat_observation_features.csv`
+- `data/interim/ascat/runs/<RUN_TAG>/ascat_observation_features_summary.json`
+4. 若需要把当前 run 提升为共享 canonical，可在 `sbatch --export` 中加 `PROMOTE_TO_CANONICAL=1`；否则默认不会覆盖 `data/interim/ascat/ascat_observation_features.csv`。
+5. 脚本会优先读取项目内私有文件 `PROJECT_DIR/.secrets/copernicusmarine.env`；若未提供，再自动探测 `$HOME/.config/copernicusmarine/credentials` 和 `$HOME/.copernicusmarine/.copernicusmarine-credentials`；若都不存在，再使用 `ASCAT_USERNAME` / `ASCAT_PASSWORD` 一类环境变量。
+6. Sherlock 不允许 batch 脚本里出现显式 `sleep`。当前 `slurm/run_ascat_sherlock_array.slurm` 已移除 shell 级 cooldown，并把 Python 侧默认请求间隔调到 `ASCAT_REQUEST_PAUSE_SEC=0.20`；若需继续调小或调大，请在 `sbatch --export` 中覆盖。
+7. Sherlock 路径默认不再重建 manifest；若 `FULL_MANIFEST` 不存在会直接失败，并提示先把 `data/interim/ascat/ascat_request_manifest_full.csv` 提交进仓库。
+8. 当前 `.gitignore` 已对 `data/interim/ascat/ascat_request_manifest_full.csv` 做了例外放行，并忽略 `.secrets/`；若 Sherlock 只通过 `git clone`/`git pull` 获取项目，请确保 manifest 已提交，而认证文件不要提交。
 
 ---
 
