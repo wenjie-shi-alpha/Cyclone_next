@@ -1,0 +1,77 @@
+model:
+  name_or_path: models/google/gemma-4-E4B-it
+  max_seq_length: 1280
+  load_in_4bit: true
+  dtype: null
+  trust_remote_code: false
+
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  bias: none
+  random_state: 3407
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  dataset_root: data/training_rebuilt_v2_20260414_guidancefix
+  rl_train_file: data/training_rebuilt_v2_20260414_guidancefix/rl_train.jsonl
+  rl_eval_file: null
+
+trainer:
+  output_dir: runs/dr_grpo_phase1_v4_20260412
+  run_name: dr_grpo_phase1_v4_20260412
+  adapter_init_path: runs/forecast_v2_round1_20260411_155355/sft/final_adapter
+  reference_adapter_path: runs/forecast_v2_round1_20260411_155355/sft/final_adapter
+  disable_dropout: true
+  reward_save_threshold: 0.3
+  stop_after_reward_checkpoint: true
+  scale_rewards: none
+  mask_truncated_completions: true
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 8
+  learning_rate: 0.000002
+  num_train_epochs: 1
+  max_steps: 120
+  warmup_ratio: 0.05
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  lr_scheduler_type: cosine
+  logging_steps: 1
+  save_steps: 10
+  eval_steps: 1000
+  save_total_limit: 4
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  report_to:
+    - none
+  resume_from_checkpoint: null
+  seed: 3407
+  max_prompt_length: 896
+  max_completion_length: 224
+  num_generations: 2
+  beta: 0.02
+  loss_type: dr_grpo
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 40
+  generation_batch_size: null
+  use_vllm: false
+  vllm_gpu_memory_utilization: 0.85
+  unsloth_num_chunks: 1
+
+reward:
+  truth_slot_tolerance_hours: 6
+  track_error_scale_km: 250.0
+  intensity_error_scale_kt: 20.0
+  track_error_weight: 0.5
+  intensity_error_weight: 0.5

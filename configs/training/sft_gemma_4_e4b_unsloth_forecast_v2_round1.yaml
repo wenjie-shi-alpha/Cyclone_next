@@ -1,0 +1,56 @@
+model:
+  name_or_path: models/google/gemma-4-E4B-it
+  max_seq_length: 1536
+  load_in_4bit: true
+  dtype: null
+  trust_remote_code: false
+
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  bias: none
+  random_state: 3407
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  dataset_root: data/training_rebuilt_v2_20260414_guidancefix
+  sft_train_file: data/training_rebuilt_v2_20260414_guidancefix/sft_train.jsonl
+  sft_eval_file: data/training_rebuilt_v2_20260414_guidancefix/sft_val.jsonl
+
+trainer:
+  output_dir: runs/sft_gemma_4_e4b_unsloth_forecast_v2_round1
+  run_name: sft_gemma_4_e4b_unsloth_forecast_v2_round1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.0001
+  num_train_epochs: 2
+  max_steps: -1
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  max_grad_norm: 0.3
+  lr_scheduler_type: cosine
+  logging_steps: 5
+  save_steps: 50
+  eval_steps: 50
+  save_total_limit: 10
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  report_to:
+    - none
+  resume_from_checkpoint: null
+  seed: 3407
+  packing: false
+  completion_only_loss: true
+  assistant_only_loss: false
+  dataset_text_field: text
+  dataset_num_proc: null

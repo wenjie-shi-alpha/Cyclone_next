@@ -1,0 +1,77 @@
+model:
+  name_or_path: models/google/gemma-4-E4B-it
+  max_seq_length: 1536
+  load_in_4bit: true
+  dtype: null
+  trust_remote_code: false
+
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  bias: none
+  random_state: 3407
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  dataset_root: data/training_rebuilt_v2_20260414_guidancefix
+  sft_train_file: data/training_rebuilt_v2_20260414_guidancefix/views/diagnostic_track_inflection_only/train.jsonl
+  sft_eval_file: data/training_rebuilt_v2_20260414_guidancefix/views/diagnostic_track_inflection_only/val.jsonl
+  sft_resample_fields:
+    - steering_regime_phase
+    - turn_timing_bucket
+    - turn_direction_family
+    - turn_magnitude_bucket
+  sft_resample_power: 0.5
+  sft_resample_max_multiplier: 6
+  sft_resample_label_min_multipliers:
+    steering_regime_phase:
+      recurving: 4
+    turn_direction_family:
+      eastward_escape: 3
+      westward_or_equatorward_bend: 3
+    turn_magnitude_bucket:
+      strong: 2
+      sharp: 3
+
+trainer:
+  output_dir: runs/diagnostic_adapter_track_inflection_v0
+  run_name: diagnostic_adapter_track_inflection_v0
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.00005
+  num_train_epochs: 1
+  max_steps: -1
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  max_grad_norm: 0.3
+  lr_scheduler_type: cosine
+  logging_steps: 5
+  save_steps: 40
+  eval_steps: 40
+  save_total_limit: 10
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  report_to:
+    - none
+  resume_from_checkpoint: null
+  seed: 3407
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  early_stopping_patience: 3
+  early_stopping_threshold: 0.0
+  packing: false
+  completion_only_loss: true
+  assistant_only_loss: false
+  dataset_text_field: text
+  dataset_num_proc: null

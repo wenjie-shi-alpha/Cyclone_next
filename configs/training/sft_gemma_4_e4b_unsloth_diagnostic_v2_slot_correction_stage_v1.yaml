@@ -1,0 +1,77 @@
+model:
+  name_or_path: models/google/gemma-4-E4B-it
+  max_seq_length: 2048
+  load_in_4bit: true
+  dtype: null
+  trust_remote_code: false
+
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  bias: none
+  random_state: 3407
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+data:
+  dataset_root: data/training_rebuilt_v2_20260414_guidancefix
+  sft_train_file: data/training_rebuilt_v2_20260414_guidancefix/views/diagnostic_slot_correction_only/train.jsonl
+  sft_eval_file: data/training_rebuilt_v2_20260414_guidancefix/views/diagnostic_slot_correction_only/val.jsonl
+  sft_resample_fields:
+    - slot_1_lat_bias_vs_consensus_bucket
+    - slot_1_lon_bias_vs_consensus_bucket
+    - slot_2_lat_bias_vs_consensus_bucket
+    - slot_2_lon_bias_vs_consensus_bucket
+    - slot_3_lat_bias_vs_consensus_bucket
+    - slot_3_lon_bias_vs_consensus_bucket
+    - slot_4_lat_bias_vs_consensus_bucket
+    - slot_4_lon_bias_vs_consensus_bucket
+    - slot_5_lat_bias_vs_consensus_bucket
+    - slot_5_lon_bias_vs_consensus_bucket
+    - slot_6_lat_bias_vs_consensus_bucket
+    - slot_6_lon_bias_vs_consensus_bucket
+  sft_resample_power: 0.4
+  sft_resample_max_multiplier: 6
+
+trainer:
+  output_dir: runs/diagnostic_adapter_slot_correction_stage_v1
+  run_name: diagnostic_adapter_slot_correction_stage_v1
+  adapter_init_path: runs/phase2_diagnostic_slot_correction_v0_20260418_161630/sft/final_adapter
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.00005
+  num_train_epochs: 2
+  max_steps: -1
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  max_grad_norm: 0.3
+  lr_scheduler_type: cosine
+  logging_steps: 5
+  save_steps: 40
+  eval_steps: 40
+  save_total_limit: 10
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  report_to:
+    - none
+  resume_from_checkpoint: null
+  seed: 3407
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+  early_stopping_patience: 5
+  early_stopping_threshold: 0.0
+  packing: false
+  completion_only_loss: true
+  assistant_only_loss: false
+  dataset_text_field: text
+  dataset_num_proc: null
