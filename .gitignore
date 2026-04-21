@@ -19,6 +19,7 @@ ENV/
 .ipynb_checkpoints/
 .vscode/
 .idea/
+.secrets/
 
 # OS and temporary files
 .DS_Store
@@ -44,3 +45,14 @@ GFS_forecast/
 HRES_forecast/
 ascat_request_manifest.csv
 recon_request_manifest.csv
+data/
+
+# Training outputs
+runs/
+wandb/
+outputs/
+
+# Local model artifacts and generated caches
+models/
+unsloth_compiled_cache/
+.codex
