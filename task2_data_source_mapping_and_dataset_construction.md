@@ -666,8 +666,11 @@ data/
 
 2. 远端（Sherlock Slurm 单一入口主路径，CDS JupyterLab 备选）完成 ASCAT 特征提取：
 - 输入：Copernicus Marine ASCAT L3（NRT + Multi-year）+ 已提交到仓库的 `data/interim/ascat/ascat_request_manifest_full.csv`
-- 输出：`data/interim/ascat/ascat_observation_features.csv`
-- 汇总：`data/interim/ascat/ascat_observation_features_summary.json`
+- 默认输出：`data/interim/ascat/runs/<RUN_TAG>/ascat_observation_features_full.csv`
+- 默认汇总：`data/interim/ascat/runs/<RUN_TAG>/ascat_observation_features_full_summary.json`
+- 可选：提交时设 `PROMOTE_TO_CANONICAL=1` 后同步共享 canonical：
+  - `data/interim/ascat/ascat_observation_features.csv`
+  - `data/interim/ascat/ascat_observation_features_summary.json`
 
 3. 本地完成 Recon 报文解析（默认路径）：
 - 输入：NHC `archive/recon/<year>/` 文本目录（按需抓取 + 本地缓存）

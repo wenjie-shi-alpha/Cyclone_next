@@ -947,7 +947,7 @@
           </div>
           <div class="point">
             <strong>当前位置</strong>
-            confirmed mainline 在 held-out `n=1454` 上把轨迹误差从 `181.91 km` 降到 `151.96 km`
+            confirmed mainline 在 held-out `n=1454` 上把轨迹误差从 `181.91 km` 降到 `145.58 km`
           </div>
         </div>
       </div>
@@ -957,7 +957,7 @@
           <span class="pill good">专家优势已证实</span>
           <span class="pill good">专家修正机制已证实</span>
           <span class="pill good">结构化过程学习已证实</span>
-          <span class="pill warn">v3 仍待 full confirm</span>
+          <span class="pill good">v3 full confirm 已完成</span>
         </div>
         <h2>一页摘要</h2>
         <p>
@@ -968,11 +968,11 @@
         <div class="summary-kpis">
           <div class="kpi">
             轨迹误差
-            <span class="value">181.91 → 151.96</span>
+            <span class="value">181.91 → 145.58</span>
           </div>
           <div class="kpi">
             相对官方差距
-            <span class="value">164.00 → 131.04</span>
+            <span class="value">164.00 → 125.26</span>
           </div>
           <div class="kpi">
             严格可解析率
@@ -980,7 +980,7 @@
           </div>
           <div class="kpi">
             `turning_signal` 宏平均 F1
-            <span class="value">0.8309</span>
+            <span class="value">0.8256</span>
           </div>
         </div>
       </aside>
@@ -1638,11 +1638,11 @@ ATCF guidance:
         </article>
         <article class="timeline-card">
           <span class="date">Frontier</span>
-          <h3>`v3` 是暂时领先者</h3>
+          <h3>`v3` 已完成主线升级</h3>
           <ul>
-            <li>sample-200 上目前最好，但还只是 provisional winner。</li>
+            <li>更大 held-out full confirm 继续优于 `v1` control，已升级为当前 confirmed mainline。</li>
             <li>增益主要来自 `lon bucket`，不是原先预想中的 `lat repair`。</li>
-            <li>必须 full confirm 后才能考虑主线升级。</li>
+            <li>下一步不再是补 confirm，而是判断是否已具备安全进入 RL 的条件。</li>
           </ul>
         </article>
       </div>
@@ -1652,10 +1652,10 @@ ATCF guidance:
       <div class="section-header">
         <div>
           <div class="eyebrow">Hard Evidence</div>
-          <h2>关键数据：先报告 confirmed evidence，再报告 exploratory evidence</h2>
+          <h2>关键数据：以 held-out confirmed evidence 为主，保留旧主线作 control</h2>
           <p>
-            这里明确区分两类证据层级。第一层是当前最可靠的 held-out confirm 结果，样本数 `n=1454`；
-            第二层是 `v3` 的 sample-200 exploratory signal，它能说明前沿方向，但还不能直接改写主线结论。
+            当前最重要的证据已经不再是 sample-200 exploratory signal，而是 `v3` 的 held-out full confirm。
+            因此这里统一以 `n=1454` 的 confirmed 口径报告当前 mainline，并保留 `v1` 作为稳定 control。
           </p>
         </div>
       </div>
@@ -1663,22 +1663,22 @@ ATCF guidance:
       <div class="metric-grid">
         <article class="metric-card">
           <h3>当前 confirmed mainline</h3>
-          <p>`predicted slot_turn_track_plus_baseline_intensity_scale_1p20_v1`</p>
-          <strong class="metric-value">151.96 km</strong>
+          <p>`predicted slot_turn_track_plus_baseline_intensity_scale_1p20_v3`</p>
+          <strong class="metric-value">145.58 km</strong>
           <p>forecast track error</p>
-          <span class="delta">较 baseline 改善 29.95 km / 16.5%</span>
+          <span class="delta">较 baseline 改善 36.33 km / 20.0%</span>
         </article>
         <article class="metric-card">
           <h3>对 official 的轨迹差距</h3>
           <p>同一条 confirmed mainline，`n=1454`</p>
-          <strong class="metric-value">131.04 km</strong>
+          <strong class="metric-value">125.26 km</strong>
           <p>model-vs-official track diff</p>
-          <span class="delta">较 baseline 收窄 32.96 km / 20.1%</span>
+          <span class="delta">较 baseline 收窄 38.74 km / 23.6%</span>
         </article>
         <article class="metric-card">
           <h3>结构化过程已被学到一部分</h3>
           <p>同一条 confirmed mainline 的 standalone 诊断结果</p>
-          <strong class="metric-value">1.0000 / 0.8309</strong>
+          <strong class="metric-value">1.0000 / 0.8256</strong>
           <p>`json_parse_rate` / `turning_signal macro-F1`</p>
           <span class="delta">说明中间判断不只是后处理伪造出来的</span>
         </article>
@@ -1710,14 +1710,24 @@ ATCF guidance:
               <td><span class="badge info">Phase 1 参考基线</span></td>
             </tr>
             <tr>
-              <td><strong>diagnostic adapter: slot_turn_correction_v1</strong></td>
+              <td><strong>diagnostic adapter: slot_turn_correction_v3</strong></td>
               <td class="num">1613</td>
-              <td class="num">0.024</td>
-              <td class="num">0.3246</td>
+              <td class="num">0.023</td>
+              <td class="num">0.3418</td>
               <td class="num">N/A</td>
               <td class="num">N/A</td>
               <td class="num">1.0000</td>
               <td><span class="badge info">过程学习证据</span></td>
+            </tr>
+            <tr>
+              <td><strong>predicted_slot_turn_track_plus_baseline_intensity_scale_1p20_v3</strong></td>
+              <td class="num">1454</td>
+              <td class="num">0.023</td>
+              <td class="num">0.3418</td>
+              <td class="num">145.58</td>
+              <td class="num">125.26</td>
+              <td class="num">1.0000</td>
+              <td><span class="badge good">当前 confirmed mainline</span></td>
             </tr>
             <tr>
               <td><strong>predicted_slot_turn_track_plus_baseline_intensity_scale_1p20_v1</strong></td>
@@ -1727,7 +1737,7 @@ ATCF guidance:
               <td class="num">151.96</td>
               <td class="num">131.04</td>
               <td class="num">1.0000</td>
-              <td><span class="badge good">当前 confirmed mainline</span></td>
+              <td><span class="badge info">稳定 control</span></td>
             </tr>
             <tr>
               <td><strong>expert_official</strong></td>
@@ -1746,15 +1756,19 @@ ATCF guidance:
       <div class="compare-grid">
         <article class="mini-card">
           <h3>confirmed evidence：大样本 held-out 结果</h3>
-          <p>长度越短越好。这里统一使用 `n=1454` 的 confirmed 口径，对比 baseline、当前主线和 expert official。</p>
+          <p>长度越短越好。这里统一使用 `n=1454` 的 confirmed 口径，对比 baseline、当前主线、旧主线 control 和 expert official。</p>
           <div class="bars">
             <div class="bar-row">
               <div class="bar-top"><span>Baseline `track_error_km`</span><strong>181.91</strong></div>
               <div class="bar-track"><div class="bar-fill alt" style="width: 100%;"></div></div>
             </div>
             <div class="bar-row">
-              <div class="bar-top"><span>Current mainline</span><strong>151.96</strong></div>
-              <div class="bar-track"><div class="bar-fill good" style="width: 83.5%;"></div></div>
+              <div class="bar-top"><span>Current mainline `v3`</span><strong>145.58</strong></div>
+              <div class="bar-track"><div class="bar-fill good" style="width: 80.0%;"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-top"><span>Previous control `v1`</span><strong>151.96</strong></div>
+              <div class="bar-track"><div class="bar-fill good" style="width: 83.5%; opacity: 0.7;"></div></div>
             </div>
             <div class="bar-row">
               <div class="bar-top"><span>Expert official</span><strong>97.43</strong></div>
@@ -1763,12 +1777,12 @@ ATCF guidance:
           </div>
         </article>
         <article class="mini-card">
-          <h3>exploratory evidence：`v3` 为什么只能算前沿探索</h3>
+          <h3>control comparison：`v3` 为什么已足够升级主线</h3>
           <ul>
-            <li>`v3` 的 forecast 优势来自 sample-200 compare：`track_error_km = 143.14`，`vs official = 125.36`。</li>
-            <li>同一批 sample-200 上，`v3 oracle` 为 `115.95 / 65.42`，说明接口方向仍然是正的。</li>
-            <li>但 `v3` 还没有对应的大样本 forecast confirm，因此现在只能说“值得优先验证”，不能说“已经替代主线”。</li>
-            <li>学术报告里应把它表述为 frontier result，而不是 final result。</li>
+            <li>`v3 full confirm` 相对 `v1 control`：`track_error_km 151.96 → 145.58`，改善 `6.38 km`。</li>
+            <li>`mean_track_diff_vs_official_km 131.04 → 125.26`，再改善 `5.78 km`。</li>
+            <li>`reward_mean 0.3665 → 0.3686`，小幅继续上升；强度指标保持不变，没有额外代价。</li>
+            <li>因此 `v3` 现在应表述为当前 confirmed mainline，而不是 frontier-only result。</li>
           </ul>
         </article>
       </div>
@@ -1809,12 +1823,12 @@ ATCF guidance:
 
       <div class="compare-grid">
         <article class="mini-card">
-          <h3>最强证据：`slot_turn_correction v1` 已不只是 forecast-side 有效</h3>
+          <h3>最强证据：`slot_turn_correction v3` 已不只是 forecast-side 有效</h3>
           <ul>
             <li>`json_parse_rate = 1.0000`：说明 raw diagnostic head 已稳定守住 contract。</li>
-            <li>`turning_signal exact_accuracy = 0.8246`，`macro-F1 = 0.8309`：说明关键转向判断已不再塌缩到 `<null>/steady`。</li>
-            <li>`mean_macro-F1 = 0.3246`：说明模型学到了一部分结构化诊断字段，而不是完全靠 renderer 补救。</li>
-            <li>与此同时 forecast 指标仍优于前主线，说明这些中间判断是“可执行的”，不是装饰性标签。</li>
+            <li>`turning_signal exact_accuracy = 0.8221`，`macro-F1 = 0.8256`：说明关键转向判断仍保持稳定，没有因主线升级而塌缩。</li>
+            <li>`mean_macro-F1 = 0.3418`：说明模型学到了一部分结构化诊断字段，而不是完全靠 renderer 补救。</li>
+            <li>与此同时 forecast 指标继续优于 `v1` control，说明这些中间判断是“可执行的”，不是装饰性标签。</li>
           </ul>
         </article>
         <article class="mini-card">
@@ -1822,7 +1836,7 @@ ATCF guidance:
           <ul>
             <li>`joint_exact` 依然很低，说明全字段同时命中的能力还弱。</li>
             <li>最弱部分已经收敛到 12 个 slot bucket 里的 `lat bucket semantics`。</li>
-            <li>`v2`、`v3` 证明 aggregate 指标能继续升，但增益主要来自 `lon bucket`，不是 `lat bucket`。</li>
+            <li>`v3 full confirm` 依然说明 aggregate 指标能继续升，但增益主要来自 `lon bucket`，不是 `lat bucket`。</li>
             <li>这意味着我们已经学会了“部分结构化决策”，但还没有学会“完整、均衡的决策分解”。</li>
           </ul>
         </article>
@@ -1865,12 +1879,12 @@ ATCF guidance:
               </div>
             </div>
             <div class="dual-bar">
-              <div class="labels"><strong>Mainline</strong><span>mean 152.0 / p50 129.1</span></div>
+              <div class="labels"><strong>Mainline</strong><span>mean 145.6 / p50 127.9</span></div>
               <div class="bar-stack">
-                <div class="stack-label"><span>mean</span><span>152.0</span></div>
-                <div class="bar-track"><div class="bar-fill good" style="width: 83.5%;"></div></div>
-                <div class="stack-label"><span>p50</span><span>129.1</span></div>
-                <div class="bar-track"><div class="bar-fill good" style="width: 71.0%;"></div></div>
+                <div class="stack-label"><span>mean</span><span>145.6</span></div>
+                <div class="bar-track"><div class="bar-fill good" style="width: 80.0%;"></div></div>
+                <div class="stack-label"><span>p50</span><span>127.9</span></div>
+                <div class="bar-track"><div class="bar-fill good" style="width: 70.3%;"></div></div>
               </div>
             </div>
             <div class="dual-bar">
@@ -1905,7 +1919,7 @@ ATCF guidance:
             </div>
             <div class="item">
               mainline vs official 平均轨迹差
-              <strong>131.0 km</strong>
+              <strong>125.3 km</strong>
             </div>
           </div>
           <p class="axis-note">
@@ -1917,14 +1931,15 @@ ATCF guidance:
           <h3>字段级分布：`v3` 到底改进了什么</h3>
           <ul>
             <li>`mean_field_macro_f1`：`0.3246 → 0.3418`</li>
+            <li>`bucket-only mean macro-F1`：`0.2824 → 0.3015`</li>
             <li>`turning_signal macro-F1`：`0.8309 → 0.8256`，基本持平</li>
             <li>`slot_1_lon macro-F1`：`0.1846 → 0.2956`，提升明显</li>
             <li>`slot_1_lat macro-F1`：`0.1414 → 0.1431`，几乎不动</li>
             <li>`slot_6_lat macro-F1`：`0.2171 → 0.2205`，几乎不动</li>
-            <li>`slot_6_lon macro-F1`：`0.2752 → 0.2800`，仅小幅改善</li>
+            <li>`lon mean macro-F1`：`0.2946 → 0.3286`，明显高于 `lat mean macro-F1 0.2703 → 0.2743`</li>
           </ul>
           <p class="axis-note">
-            这说明 `v3` 的收益主要仍来自 `lon bucket`，而不是原假设中的 `lat bucket repair`。也因此它现在只能算 provisional winner。
+            这说明 `v3` 的收益主要仍来自 `lon bucket`，而不是原假设中的 `lat bucket repair`。它已经足够支撑主线升级，但还不够说明 bucket semantics 已经完全收口。
           </p>
         </article>
       </div>
@@ -1962,36 +1977,36 @@ ATCF guidance:
       <div class="section-header">
         <div>
           <div class="eyebrow">Plan</div>
-          <h2>下一步计划：从“主线已验证”进入“弱语义定向提升”</h2>
+          <h2>下一步计划：进入 RL 准备阶段，但先冻结 reward 与 guardrail</h2>
           <p>
-            当前最合理的计划不是回到 redesign，也不是立刻扩到 reasoning prose，而是以当前 confirmed mainline 为底座，
-            做最小必要改动，把剩余瓶颈逐个打穿。
+            当前最合理的计划不是回到 redesign；`v3 full confirm` 和 post-confirm semantic audit 已经说明主线可以稳定进入 RL 准备阶段。
+            但更稳妥的顺序仍然是：先把 reward 与 guardrail 冻结，再正式启动 RL 训练。
           </p>
         </div>
       </div>
 
       <div class="next-grid">
         <article class="mini-card">
-          <h3>Step 1：先完成 `v3` full confirm</h3>
+          <h3>Step 1：semantic audit 已完成</h3>
           <ul>
-            <li>把 `v3` 现在的 sample-200 provisional winner 状态，转成更大 held-out 上的正式结论。</li>
-            <li>只有当 `track_error_km` 与 `mean_track_diff_vs_official_km` 都继续优于当前 confirmed mainline，才允许升级主线。</li>
-            <li>这是最近一步里最该优先做的事，因为它关系到主线是否切换。</li>
+            <li>当前 verdict 已明确：`v3` 的 held-out gain 主要来自 `lon semantics`。</li>
+            <li>`lat bucket` 仍是最弱语义轴，但不是当前 gain 的主要解释变量。</li>
+            <li>因此新的 `lat-only targeted SFT cleanup` 不再作为 RL 前的必经 blocker。</li>
           </ul>
         </article>
         <article class="mini-card">
-          <h3>Step 2：继续盯 `lat bucket semantics`</h3>
+          <h3>Step 2：冻结 RL objective 与 guardrail</h3>
           <ul>
-            <li>冻结 13 字段 contract、renderer、baseline intensity integration、turning path。</li>
-            <li>不再泛化地修 all bucket，而是只盯 `north/south` 判别。</li>
-            <li>重点字段是 `slot_1_lat` 与 `slot_6_lat`，它们仍是最弱短板。</li>
+            <li>如果进入 RL，优化对象应是 integrated forecast behavior，而不是 raw diagnostic head。</li>
+            <li>主 reward 必须直接绑定 `track_error_km` 与 `mean_track_diff_vs_official_km`，不能用 standalone proxy 替代。</li>
+            <li>`intensity_error_kt`、`strict_parseable_rate`、`slot_time_match_rate_vs_official` 更适合作为 guardrail。</li>
           </ul>
         </article>
         <article class="mini-card">
           <h3>Step 3：评估口径保持严格</h3>
           <ul>
             <li>继续同时看两类指标：forecast-side 主指标，以及 standalone diagnostic contract / field-level 指标。</li>
-            <li>不允许只凭 `mean_macro-F1` 上升就宣称主线升级。</li>
+            <li>不允许只凭 `reward_mean`、`coverage` 或 `mean_macro-F1` 上升就宣称 RL 值得启动。</li>
             <li>继续单独跟踪 `bucket-only mean macro-F1`，避免 `turning_signal` 掩盖真正短板。</li>
           </ul>
         </article>
@@ -1999,7 +2014,7 @@ ATCF guidance:
           <h3>Step 4：Phase 3 先不提前启动</h3>
           <ul>
             <li>reasoning/explanation 仍应作为后续独立阶段，而不是现在与 Phase 2 主线混训。</li>
-            <li>当前更稳的叙述是：我们先把结构化 decision state 学稳，再考虑 explanation 层。</li>
+            <li>当前更稳的叙述是：我们先把结构化 decision state 学稳，并把 RL reward 设计收口，再考虑 explanation 层。</li>
             <li>这能避免为了长文本解释，破坏已经验证通过的 forecast 主链路。</li>
           </ul>
         </article>
@@ -2008,9 +2023,9 @@ ATCF guidance:
       <div class="callout">
         <h3>下一步的核心表述</h3>
         <p>
-          “下一步不是重新设计 diagnostics，也不是提前回到自由文本 reasoning；我们会先用更大 held-out 数据确认
-          `slot_turn_correction v3` 是否能正式替代当前主线，同时继续只针对最弱的 `lat bucket semantics`
-          做定向提升，保持当前已验证通过的 executable interface 不被破坏。”
+          “当前已经可以开始准备 RL。更准确地说：我们不会再把 `lat-only cleanup` 作为 RL 前的 mandatory blocker，
+          而是直接以当前 confirmed mainline 为基础，先冻结只绑定 dual-track gate 的 RL objective 与 guardrail，
+          然后再启动 RL 训练。”
         </p>
       </div>
     </section>
@@ -2032,12 +2047,14 @@ ATCF guidance:
         页面中嵌入的现成图已复制到 `docs/assets/phase2_briefing/`，避免依赖外部绝对路径。
         专家修正机制数据来自 `/root/MOSNet/outputs/paper1_full/data/figure4/figure4_expert_summary.csv`，用于证明专家修正不是随机行为，而是沿稳定 pathway 做系统补偿。
         当前项目的 confirmed mainline 数值来自
-        `runs/phase2_diagnostic_slot_turn_correction_v1_confirm_20260420_141813/evals/forecast_integration_compare_sample1613_seed3407.models/`
+        `runs/phase2_diagnostic_slot_turn_correction_v3_confirm_20260421_090002/evals/forecast_integration_compare_sample1613_seed3407.json`
+        与对应的
+        `runs/phase2_diagnostic_slot_turn_correction_v3_confirm_20260421_090002/evals/diagnostic_eval_summary_sample1613_seed3407.models/01_diagnostic_adapter_slot_turn_correction_v3.json`。
+        `v1` 的 retained control 数值来自
+        `runs/phase2_diagnostic_slot_turn_correction_v1_confirm_20260420_141813/evals/forecast_integration_compare_sample1613_seed3407.json`
         与对应的 `diagnostic_eval_summary_sample1613_seed3407.models/01_diagnostic_adapter_slot_turn_correction_v1.json`。
-        `v3` 的 exploratory 数值来自
-        `runs/phase2_diagnostic_slot_turn_correction_v3_20260421_010206/evals/forecast_integration_compare_sample200_seed3407.json`
-        和 `runs/phase2_diagnostic_slot_turn_correction_v3_confirm_20260421_090002/evals/diagnostic_eval_summary_sample1613_seed3407.json`。
-        因此，汇报时应明确区分：`v1 + baseline intensity + scale 1.20` 是当前 confirmed mainline，`v3` 仍是待 full confirm 的前沿分支。
+        因此，汇报时当前应明确区分：`v3 + baseline intensity + scale 1.20` 是新的 confirmed mainline，
+        `v1` 是 retained stability control，而不再把 `v3` 表述为待 full confirm 的前沿分支。
       </p>
     </section>
   </div>
