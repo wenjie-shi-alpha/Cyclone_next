@@ -1,0 +1,2045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phase 2 诊断监督阶段汇报</title>
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --bg-soft: #fbf7ef;
+      --panel: rgba(255, 252, 245, 0.86);
+      --panel-strong: rgba(255, 250, 242, 0.96);
+      --ink: #182028;
+      --muted: #5f6b72;
+      --line: rgba(24, 32, 40, 0.12);
+      --accent: #0d6d73;
+      --accent-soft: rgba(13, 109, 115, 0.12);
+      --accent-2: #bb5b2d;
+      --accent-2-soft: rgba(187, 91, 45, 0.12);
+      --good: #1d6b42;
+      --good-soft: rgba(29, 107, 66, 0.12);
+      --warn: #8b5a1f;
+      --warn-soft: rgba(139, 90, 31, 0.12);
+      --bad: #8f3a2c;
+      --bad-soft: rgba(143, 58, 44, 0.12);
+      --shadow: 0 20px 60px rgba(54, 44, 28, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --maxw: 1280px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(13, 109, 115, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(187, 91, 45, 0.16), transparent 34%),
+        linear-gradient(180deg, #f4efe5 0%, #fbf7ef 48%, #f2ece1 100%);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.28;
+      background-image:
+        linear-gradient(rgba(24, 32, 40, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(24, 32, 40, 0.035) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.28), transparent 75%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .shell {
+      width: min(var(--maxw), calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 88px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 251, 244, 0.72);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(53, 42, 26, 0.08);
+      position: sticky;
+      top: 16px;
+      z-index: 20;
+    }
+
+    .topbar .brand {
+      font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .topbar nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .topbar nav a {
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    }
+
+    .topbar nav a:hover {
+      background: rgba(24, 32, 40, 0.06);
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 22px;
+    }
+
+    .hero-panel,
+    .summary-card,
+    .section,
+    .metric-card,
+    .timeline-card,
+    .mini-card,
+    .callout,
+    .table-wrap,
+    .status-grid article,
+    .logic-step {
+      background: var(--panel);
+      border: 1px solid rgba(24, 32, 40, 0.09);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-panel {
+      padding: 34px 34px 28px;
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle at top right, rgba(13, 109, 115, 0.16), transparent 26%),
+        linear-gradient(180deg, rgba(255, 250, 242, 0.96), rgba(255, 249, 241, 0.88));
+    }
+
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      right: -60px;
+      top: -40px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(187, 91, 45, 0.14), transparent 72%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(24, 32, 40, 0.06);
+      color: var(--muted);
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      margin: 0;
+      font-family: "Source Han Serif SC", "Songti SC", "STSong", "Noto Serif CJK SC", serif;
+      line-height: 1.18;
+      letter-spacing: 0.01em;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 4.6vw, 4.3rem);
+      max-width: 12ch;
+      margin-bottom: 18px;
+    }
+
+    .hero-panel p.lead {
+      margin: 0 0 16px;
+      max-width: 66ch;
+      font-size: 1.06rem;
+      color: #314049;
+    }
+
+    .hero-points {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .hero-points .point {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid rgba(24, 32, 40, 0.08);
+    }
+
+    .hero-points strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+    }
+
+    .summary-card {
+      padding: 26px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background:
+        linear-gradient(180deg, rgba(14, 110, 116, 0.08), rgba(255, 251, 245, 0.96)),
+        rgba(255, 251, 245, 0.96);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      border: 1px solid transparent;
+    }
+
+    .pill.good {
+      background: var(--good-soft);
+      color: var(--good);
+      border-color: rgba(29, 107, 66, 0.16);
+    }
+
+    .pill.warn {
+      background: var(--warn-soft);
+      color: var(--warn);
+      border-color: rgba(139, 90, 31, 0.16);
+    }
+
+    .pill.info {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(13, 109, 115, 0.16);
+    }
+
+    .summary-kpis {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .summary-kpis .kpi {
+      padding: 14px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid rgba(24, 32, 40, 0.08);
+    }
+
+    .summary-kpis .value {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-top: 4px;
+      color: var(--ink);
+    }
+
+    .section {
+      padding: 28px 28px 30px;
+      margin-top: 18px;
+      background: linear-gradient(180deg, rgba(255, 251, 244, 0.95), rgba(255, 249, 241, 0.9));
+    }
+
+    .section-header {
+      display: flex;
+      gap: 16px;
+      align-items: end;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .section-header p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      max-width: 70ch;
+    }
+
+    .story-grid,
+    .data-grid,
+    .term-grid,
+    .protocol-grid,
+    .status-grid,
+    .metric-grid,
+    .logic-grid,
+    .timeline,
+    .next-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .story-grid {
+      grid-template-columns: 1.05fr 0.95fr 0.95fr;
+    }
+
+    .data-grid {
+      grid-template-columns: 1.1fr 0.9fr;
+      margin-top: 12px;
+    }
+
+    .term-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+
+    .protocol-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+
+    .status-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .status-grid article,
+    .metric-card,
+    .logic-step,
+    .timeline-card,
+    .mini-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+    }
+
+    .status-grid h3,
+    .metric-card h3,
+    .timeline-card h3,
+    .logic-step h3,
+    .mini-card h3 {
+      font-size: 1.08rem;
+      margin-bottom: 10px;
+    }
+
+    .status-grid p,
+    .metric-card p,
+    .timeline-card p,
+    .logic-step p,
+    .mini-card p,
+    .callout p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .metric-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+
+    .metric-card strong.metric-value {
+      display: block;
+      margin: 10px 0 6px;
+      font-size: 2.1rem;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .metric-card .delta {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--good-soft);
+      color: var(--good);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .logic-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: stretch;
+    }
+
+    .logic-step {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logic-step::before {
+      content: attr(data-step);
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 3rem;
+      font-weight: 800;
+      color: rgba(24, 32, 40, 0.06);
+      pointer-events: none;
+    }
+
+    .logic-step .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(24, 32, 40, 0.06);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .timeline {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      margin-top: 8px;
+    }
+
+    .timeline-card {
+      min-height: 212px;
+      position: relative;
+    }
+
+    .timeline-card .date {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: rgba(24, 32, 40, 0.06);
+      color: var(--muted);
+    }
+
+    .timeline-card ul,
+    .mini-card ul,
+    .callout ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .timeline-card li,
+    .mini-card li,
+    .callout li {
+      margin-bottom: 8px;
+    }
+
+    .table-wrap {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    thead {
+      background: rgba(24, 32, 40, 0.05);
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(24, 32, 40, 0.08);
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tbody tr:hover {
+      background: rgba(13, 109, 115, 0.045);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.good {
+      background: var(--good-soft);
+      color: var(--good);
+    }
+
+    .badge.warn {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .badge.bad {
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .badge.info {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .compare-grid,
+    .reason-grid,
+    .failure-grid,
+    .next-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+
+    .example-grid,
+    .problem-grid,
+    .distribution-grid,
+    .pathway-grid,
+    .visual-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .problem-grid {
+      grid-template-columns: 1.15fr 0.85fr;
+    }
+
+    .example-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .distribution-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .pathway-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .visual-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .figure-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(24, 32, 40, 0.08);
+      box-shadow: var(--shadow);
+    }
+
+    .figure-card.wide {
+      grid-column: 1 / -1;
+    }
+
+    .figure-card img {
+      width: 100%;
+      display: block;
+      border-radius: 14px;
+      border: 1px solid rgba(24, 32, 40, 0.08);
+      background: #fff;
+    }
+
+    .figure-card figcaption {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .figure-card .caption-title {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .insight-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .insight-list li {
+      margin-bottom: 6px;
+    }
+
+    .caption-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+      align-items: stretch;
+    }
+
+    .flow-node {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(24, 32, 40, 0.08);
+      background: rgba(255, 255, 255, 0.7);
+      position: relative;
+    }
+
+    .flow-node::after {
+      content: "→";
+      position: absolute;
+      right: -13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(24, 32, 40, 0.35);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .flow-node:last-child::after {
+      content: "";
+    }
+
+    .flow-node .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(24, 32, 40, 0.06);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .code-card pre,
+    .code-card code {
+      font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+    }
+
+    .code-card pre {
+      margin: 12px 0 0;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: #f2ede2;
+      color: #21313a;
+      border: 1px solid rgba(24, 32, 40, 0.08);
+      overflow: auto;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .dual-bars {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .dual-bar {
+      display: grid;
+      gap: 6px;
+    }
+
+    .dual-bar .labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .bar-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bar-stack .stack-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .axis-note {
+      margin-top: 10px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .mini-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .mini-metrics .item {
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(24, 32, 40, 0.08);
+    }
+
+    .mini-metrics strong {
+      display: block;
+      font-size: 1.15rem;
+      margin-top: 4px;
+    }
+
+    .term-card dt {
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 10px;
+    }
+
+    .term-card dt:first-child {
+      margin-top: 0;
+    }
+
+    .term-card dd {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    .callout {
+      padding: 22px;
+      margin-top: 16px;
+      background:
+        linear-gradient(135deg, rgba(13, 109, 115, 0.08), rgba(255, 251, 244, 0.96)),
+        rgba(255, 251, 244, 0.96);
+    }
+
+    .callout h3 {
+      margin-bottom: 10px;
+    }
+
+    .bars {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .bar-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .bar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.92rem;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(24, 32, 40, 0.08);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #17a2a6);
+    }
+
+    .bar-fill.alt {
+      background: linear-gradient(90deg, var(--accent-2), #d48a56);
+    }
+
+    .bar-fill.good {
+      background: linear-gradient(90deg, #1d6b42, #4ca96d);
+    }
+
+    .source-list {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .source-list a {
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(24, 32, 40, 0.06);
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .footnote {
+      margin-top: 18px;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .story-grid,
+      .problem-grid,
+      .example-grid,
+      .distribution-grid,
+      .pathway-grid,
+      .visual-grid,
+      .flow-row,
+      .data-grid,
+      .term-grid,
+      .protocol-grid,
+      .status-grid,
+      .metric-grid,
+      .logic-grid,
+      .timeline,
+      .compare-grid,
+      .reason-grid,
+      .failure-grid,
+      .next-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(var(--maxw), calc(100vw - 18px));
+        padding-top: 18px;
+      }
+
+      .topbar {
+        border-radius: 24px;
+        padding: 14px;
+        align-items: flex-start;
+      }
+
+      .topbar nav {
+        justify-content: flex-start;
+      }
+
+      .hero,
+      .story-grid,
+      .problem-grid,
+      .example-grid,
+      .distribution-grid,
+      .pathway-grid,
+      .visual-grid,
+      .flow-row,
+      .data-grid,
+      .term-grid,
+      .protocol-grid,
+      .status-grid,
+      .metric-grid,
+      .logic-grid,
+      .timeline,
+      .compare-grid,
+      .reason-grid,
+      .failure-grid,
+      .next-grid,
+      .summary-kpis,
+      .hero-points {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-panel,
+      .summary-card,
+      .section {
+        padding: 22px 18px;
+      }
+
+      table {
+        font-size: 0.88rem;
+      }
+
+      th,
+      td {
+        padding: 12px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">Cyclone_next · Phase 2 Briefing</div>
+      <nav>
+        <a href="#problem">问题背景</a>
+        <a href="#expert">专家修正</a>
+        <a href="#story">研究故事</a>
+        <a href="#data">数据与术语</a>
+        <a href="#examples">输入输出</a>
+        <a href="#protocol">实验设计</a>
+        <a href="#evidence">数据证据</a>
+        <a href="#distribution">分布分析</a>
+        <a href="#reasoning">推理学习</a>
+        <a href="#next">下一步</a>
+      </nav>
+    </div>
+
+    <section class="hero">
+      <div class="hero-panel">
+        <div class="eyebrow">学术会议汇报版 · Phase 2 诊断监督</div>
+        <h1>模型已经很准，<br />为什么专家仍然更好？</h1>
+        <p class="lead">
+          这份汇报要讲清楚一个完整故事。第一步，我们先证明专家预报的优势依然真实存在；第二步，我们说明专家的修正不是偶然，
+          而是落在稳定、可识别的误差路径上；第三步，我们在本项目中设计一套
+          <strong>可执行、可验证、可集成</strong> 的结构化中间接口，让 LLM 学习专家如何修正 guidance，
+          并检验这种“学会推理过程”的能力能否真正改善下游 forecast。
+        </p>
+        <div class="hero-points">
+          <div class="point">
+            <strong>背景证据</strong>
+            `AIvsNWP` 显示 `OFCL` 平均轨迹误差 `92.9 km`，显著优于 `GFS 159.3 km` 与 `AI_FOUR 282.4 km`
+          </div>
+          <div class="point">
+            <strong>机制证据</strong>
+            `MOSNet` 显示专家会沿 6 类稳定误差路径做系统补偿，而不是随机修正
+          </div>
+          <div class="point">
+            <strong>本项目答案</strong>
+            当前最有效的是 13 字段 `slot-turn-correction` 接口，而不是更宽、更抽象的 schema
+          </div>
+          <div class="point">
+            <strong>当前位置</strong>
+            confirmed mainline 在 held-out `n=1454` 上把轨迹误差从 `181.91 km` 降到 `151.96 km`
+          </div>
+        </div>
+      </div>
+
+      <aside class="summary-card">
+        <div class="pill-row">
+          <span class="pill good">专家优势已证实</span>
+          <span class="pill good">专家修正机制已证实</span>
+          <span class="pill good">结构化过程学习已证实</span>
+          <span class="pill warn">v3 仍待 full confirm</span>
+        </div>
+        <h2>一页摘要</h2>
+        <p>
+          当前最稳妥的结论不是“LLM 已经学会像专家写解释”，而是：
+          <strong>LLM 已经学会了一部分专家使用的结构化判断状态，并且这部分判断状态可以被渲染成真正更好的轨迹预报。</strong>
+          因此，本阶段的贡献是把“专家过程是否可学、是否有用”从猜想推进到数据可验证的层面。
+        </p>
+        <div class="summary-kpis">
+          <div class="kpi">
+            轨迹误差
+            <span class="value">181.91 → 151.96</span>
+          </div>
+          <div class="kpi">
+            相对官方差距
+            <span class="value">164.00 → 131.04</span>
+          </div>
+          <div class="kpi">
+            严格可解析率
+            <span class="value">19.6% → 100%</span>
+          </div>
+          <div class="kpi">
+            `turning_signal` 宏平均 F1
+            <span class="value">0.8309</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section" id="problem">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Problem Framing</div>
+          <h2>问题抛出：模型已经很强，为什么还要研究专家过程</h2>
+          <p>
+            因为“模型已经能给出预报”并不等于“模型已经吸收了专家决策层的价值”。
+            从更广的业务比较到本项目自己的正式测试，专家官方预报都仍然保有明显优势，尤其体现在尾部风险控制与整体稳定性上。
+          </p>
+        </div>
+      </div>
+
+      <div class="problem-grid">
+        <article class="mini-card">
+          <h3>外部背景：`AIvsNWP` 说明专家仍然更强</h3>
+          <p>
+            在 `/root/AIvsNWP` 的历史比较中，`OFCL`、`GFS` 与 `AI_FOUR` 在同一评价框架下的总体路径误差如下。
+            这里最有价值的不是单看均值，而是对比均值与中位数：它能告诉我们误差分布是否存在长尾。
+          </p>
+          <div class="dual-bars">
+            <div class="dual-bar">
+              <div class="labels"><strong>OFCL</strong><span>mean 92.9 km / median 59.5 km</span></div>
+              <div class="bar-stack">
+                <div class="stack-label"><span>mean</span><span>92.9</span></div>
+                <div class="bar-track"><div class="bar-fill good" style="width: 32.9%;"></div></div>
+                <div class="stack-label"><span>median</span><span>59.5</span></div>
+                <div class="bar-track"><div class="bar-fill good" style="width: 21.1%;"></div></div>
+              </div>
+            </div>
+            <div class="dual-bar">
+              <div class="labels"><strong>GFS</strong><span>mean 159.3 km / median 53.0 km</span></div>
+              <div class="bar-stack">
+                <div class="stack-label"><span>mean</span><span>159.3</span></div>
+                <div class="bar-track"><div class="bar-fill alt" style="width: 56.4%;"></div></div>
+                <div class="stack-label"><span>median</span><span>53.0</span></div>
+                <div class="bar-track"><div class="bar-fill alt" style="width: 18.8%;"></div></div>
+              </div>
+            </div>
+            <div class="dual-bar">
+              <div class="labels"><strong>AI_FOUR</strong><span>mean 282.4 km / median 133.4 km</span></div>
+              <div class="bar-stack">
+                <div class="stack-label"><span>mean</span><span>282.4</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width: 100%;"></div></div>
+                <div class="stack-label"><span>median</span><span>133.4</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width: 47.2%;"></div></div>
+              </div>
+            </div>
+          </div>
+          <p class="axis-note">
+            解读：`OFCL` 的均值最低，说明总体最好；`GFS` 的中位数虽然不差，但均值显著更高，说明存在更重的尾部误差。
+            这正是专家价值最可能体现的地方：不只是提高平均水平，而是抑制灾难性偏差。
+          </p>
+        </article>
+
+        <article class="mini-card">
+          <h3>本项目自己的正式数据也重复了同样结论</h3>
+          <p>
+            在当前项目的 held-out confirm 上，第一阶段冻结的 baseline 与专家官方预报之间依旧存在显著 gap。
+            这说明二阶段要解决的问题是真实存在的，而不是外部项目里的偶然现象。
+          </p>
+          <div class="mini-metrics">
+            <div class="item">
+              baseline 平均轨迹误差
+              <strong>181.91 km</strong>
+            </div>
+            <div class="item">
+              expert 平均轨迹误差
+              <strong>97.43 km</strong>
+            </div>
+            <div class="item">
+              baseline 中位轨迹误差
+              <strong>139.87 km</strong>
+            </div>
+            <div class="item">
+              expert 中位轨迹误差
+              <strong>81.16 km</strong>
+            </div>
+          </div>
+          <p class="axis-note">
+            这意味着 Phase 2 的目标不是“再把模型直接调得更准一点”，而是理解并恢复专家在这些差距背后的决策补偿机制。
+          </p>
+        </article>
+      </div>
+
+      <div class="visual-grid">
+        <figure class="figure-card">
+          <img src="./assets/phase2_briefing/ai_track_overall.png" alt="AIvsNWP 整体轨迹误差图" />
+          <figcaption>
+            <span class="caption-title">图 A. 自动模型已经很强，不是一个“容易”的起点</span>
+            这张图来自 `AIvsNWP` 的整体轨迹误差对比。它先告诉听众一个前提：
+            我们不是在一个“模型完全不会预报”的时代讨论专家价值，而是在自动模型已经很强的前提下，仍然看到专家保有增量价值。
+            <ul class="insight-list">
+              <li>自动模型之间已经形成清晰竞争格局，说明基础预报能力并不弱。</li>
+              <li>因此专家优势更值得研究，因为它更像“剩余盲点的价值”，而不是“替代低水平系统”。</li>
+            </ul>
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card">
+          <img src="./assets/phase2_briefing/ai_best_ai_vs_nwp_track.png" alt="最佳 AI 与最佳 NWP 轨迹误差对比" />
+          <figcaption>
+            <span class="caption-title">图 B. 自动模型在 lead time 上已经展开细粒度竞争</span>
+            这张图展示最佳 AI 与最佳 NWP 在 `0-120h` 轨迹误差上的逐时效对比。
+            它的作用不是证明专家更好，而是说明“自动预报已经进入细粒度比拼阶段”。
+            <ul class="insight-list">
+              <li>这意味着我们后面要恢复的专家价值，不会是粗粒度的常识性修正，而更可能是对少数 blind spot 的针对性补偿。</li>
+              <li>也正因为如此，二阶段不适合用泛泛而谈的 explanation，而需要更窄、更可执行的结构化接口。</li>
+            </ul>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="expert">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Why Experts Matter</div>
+          <h2>专家修正不是偶然拍脑袋，而是对可识别误差路径的系统补偿</h2>
+          <p>
+            `/root/MOSNet` 的 pathway 分析给了这一层证据：专家并不是在“随机修一点”，而是在一些稳定可识别的误差路径上，
+            长期、方向一致地做补偿。
+          </p>
+        </div>
+      </div>
+
+      <div class="pathway-grid">
+        <article class="mini-card">
+          <h3>六类典型“专家补偿路径”</h3>
+          <div class="table-wrap" style="margin-top: 10px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>路径</th>
+                  <th class="num">样本数</th>
+                  <th class="num">补偿方向一致率</th>
+                  <th class="num">路径误差改善</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>shear-intensity decoupling</td><td class="num">1605</td><td class="num">83.4%</td><td class="num">86.4%</td></tr>
+                <tr><td>RI support underestimation</td><td class="num">2933</td><td class="num">90.3%</td><td class="num">69.3%</td></tr>
+                <tr><td>weak steering persistence</td><td class="num">1669</td><td class="num">76.6%</td><td class="num">58.1%</td></tr>
+                <tr><td>monsoon-trough organization</td><td class="num">532</td><td class="num">75.1%</td><td class="num">48.7%</td></tr>
+                <tr><td>ridge-steering displacement</td><td class="num">1159</td><td class="num">66.2%</td><td class="num">44.7%</td></tr>
+                <tr><td>trough-timing misalignment</td><td class="num">1888</td><td class="num">67.6%</td><td class="num">39.0%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="mini-card">
+          <h3>这对本项目意味着什么</h3>
+          <ul>
+            <li>专家优势不是抽象的“经验”，而是落在可命名、可统计、可验证的物理路径上。</li>
+            <li>因此 Phase 2 最自然的建模目标，不是直接模仿 OFCL 文本，而是先恢复这些中间判断状态。</li>
+            <li>这也解释了为什么 richer schema 未必有效：有效接口必须足够接近可执行修正，而不是停留在抽象描述层。</li>
+            <li>我们当前的 `slot-locked correction interface`，本质上就是把“专家如何修正 guidance”压缩为一个 LLM 可学的结构化接口。</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="visual-grid">
+        <figure class="figure-card wide">
+          <img src="./assets/phase2_briefing/mosnet_failure_pathways.png" alt="MOSNet 失败路径图谱" />
+          <figcaption>
+            <span class="caption-title">图 C. 失败不是杂乱无章的，而是可以被组织成有限的误差路径图谱</span>
+            这张图来自 `MOSNet Figure 2`。对非本领域听众最关键的理解是：
+            专家面对的不是无穷多种完全不同的失败，而是少数几类反复出现的、机制相关的 pathway。
+            <ul class="insight-list">
+              <li>右侧的 burden summary 说明：前几类 pathway 就覆盖了绝大部分误差负担。</li>
+              <li>下方 repairability signal 说明：有些 pathway 比较容易被修，有些则更顽固。</li>
+              <li>这正是本项目要学习的东西：不是复述所有气象知识，而是先学会“哪些路径最值得修、怎么修”。</li>
+            </ul>
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card wide">
+          <img src="./assets/phase2_briefing/mosnet_expert_compensation.png" alt="MOSNet 专家补偿方向图" />
+          <figcaption>
+            <span class="caption-title">图 D. 专家修正具有明确方向性，不是事后碰巧改对</span>
+            这张图来自 `MOSNet Figure 4`。它最直观的一点是：官方修正通常沿着与 pathway bias 相反的方向展开。
+            <ul class="insight-list">
+              <li>图中给出的 `83% compensating-direction adjustments` 是这页最值得强调的数字之一。</li>
+              <li>右上角不同 pathway 的增益差异说明：专家并不是平均地修一切，而是集中在少数值得修、能修动的路径上。</li>
+              <li>因此，本项目的 LLM 接口设计不应该是泛化的“讲理由”，而应该尽量接近“对哪一个 slot 做什么方向的修正”。</li>
+            </ul>
+          </figcaption>
+        </figure>
+
+        <figure class="figure-card wide">
+          <img src="./assets/phase2_briefing/mosnet_evolution.png" alt="MOSNet 专家价值迁移图" />
+          <figcaption>
+            <span class="caption-title">图 E. 当模型整体变强后，专家价值会向剩余 blind spots 迁移</span>
+            这张图来自 `MOSNet Figure 5`。它帮助听众理解一个更高层次的问题：
+            为什么在“模型已经很强”的时代，专家仍然没有被替代。
+            <ul class="insight-list">
+              <li>随着部分 pathway 被模型逐步修复，专家新增价值会集中到那些仍未被充分建模的 blind spots。</li>
+              <li>这为本项目提供了方法学动机：我们不需要让 LLM 学会全部预报知识，而是优先学会那些仍然承载专家价值的中间判断。</li>
+            </ul>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="story">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Storyline</div>
+          <h2>完整研究故事：问题、选择与当前答案</h2>
+          <p>这项研究围绕一个清晰问题展开：结构化过程监督是否能帮助模型学习专家的决策过程，并进一步改善轨迹预报。</p>
+        </div>
+      </div>
+      <div class="story-grid">
+        <article class="mini-card">
+          <h3>故事起点：只有 forecast 结果还不够</h3>
+          <p>
+            第一阶段我们已经能训练出直接输出严格 forecast table 的模型，但这只能回答“模型能否拟合输出结果”，
+            不能回答“模型是否学到了专家在模式分歧、转向风险和轨迹修正上的判断过程”。如果没有这一步，
+            我们很难知道模型是在做可解释的决策，还是只是在记忆某种输出分布。
+          </p>
+        </article>
+        <article class="mini-card">
+          <h3>核心假设：先学结构化过程，再谈解释文本</h3>
+          <p>
+            因此二阶段不直接训练长文本 reasoning，而是把专家决策过程压缩成可验证的结构化 diagnostics / decision states。
+            只有当这套中间接口在 oracle 注入时能改善预报，且 predicted diagnostics 也能恢复一部分增益时，
+            我们才认为模型真的学到了一部分“如何做判断”。
+          </p>
+        </article>
+        <article class="mini-card">
+          <h3>当前答案：学到了“可执行的中间判断”</h3>
+          <p>
+            当前结果表明，最有效的不是更宽、更抽象的 schema，而是更窄、更可执行的 slot-locked correction interface。
+            这条线已经在 held-out 上完成确认，并成为当前推荐主线；剩余问题已收敛到少数弱字段，而不是整体方案仍不成立。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="data">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Data And Terms</div>
+          <h2>数据来源、数据作用与术语定义</h2>
+          <p>所有实验共享同一套 canonical 数据底座；不同阶段的差异不在于换数据，而在于从同一记录中导出的训练视图与评价目标不同。</p>
+        </div>
+      </div>
+      <div class="data-grid">
+        <article class="mini-card">
+          <h3>统一数据底座：`canonical_v2`</h3>
+          <ul>
+            <li>当前所有 Phase 2 结果都建立在统一数据根目录 `data/training_rebuilt_v2_20260414_guidancefix` 之上。</li>
+            <li>这套数据不是把 forecast、diagnostic、reasoning 分别维护，而是先构造成统一的 `canonical_v2` 记录，再导出不同训练视图。</li>
+            <li>每条 canonical 样本同时包含观测背景、环境场、模式指导、历史轨迹、官方预报、诊断字段与 reasoning 相关目标。</li>
+            <li>好处是：所有阶段共享同一证据底座，只是训练目标不同，避免样本键不一致带来的比较偏差。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>当前最重要的三个 view</h3>
+          <ul>
+            <li><strong>`forecast_only`</strong>：训练和评估直接给出官方预报表，是 Phase 1 baseline 与下游 compare 的基础。</li>
+            <li><strong>`diagnostic_*`</strong>：训练结构化中间判断过程，是 Phase 2 的核心对象。</li>
+            <li><strong>`reasoning_only`</strong>：用于未来 explanation 层，目前不作为 Phase 2 主训练对象。</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="table-wrap" style="margin-top: 18px;">
+        <table>
+          <thead>
+            <tr>
+              <th>数据视图</th>
+              <th class="num">train</th>
+              <th class="num">val</th>
+              <th class="num">test</th>
+              <th>在研究中的作用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>`forecast_only`</strong></td>
+              <td class="num">3959</td>
+              <td class="num">1354</td>
+              <td class="num">1613</td>
+              <td>Phase 1 严格预报主任务；提供正式 baseline；也是所有 forecast integration compare 的共同输入底座。</td>
+            </tr>
+            <tr>
+              <td><strong>`diagnostic_slot_correction_only`</strong></td>
+              <td class="num">3959</td>
+              <td class="num">1354</td>
+              <td class="num">1613</td>
+              <td>Phase 2A/2B 的关键接口；验证 slot-locked track correction 是否真实有用。</td>
+            </tr>
+            <tr>
+              <td><strong>`diagnostic_slot_turn_correction_only`</strong></td>
+              <td class="num">3959</td>
+              <td class="num">1354</td>
+              <td class="num">1613</td>
+              <td>Phase 2C 的 executable extension；在 slot correction 基础上恢复 turning-related 决策状态。</td>
+            </tr>
+            <tr>
+              <td><strong>`reasoning_only`</strong></td>
+              <td class="num">385</td>
+              <td class="num">138</td>
+              <td class="num">148</td>
+              <td>未来 explanation / narrative reasoning 阶段的数据接口。当前规模较小，因此不适合作为 Phase 2 主线。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="term-grid">
+        <article class="mini-card term-card">
+          <h3>术语 1：Baseline 是什么</h3>
+          <dl>
+            <dt>中文可表述为</dt>
+            <dd>“基线模型”或“直接预报参考线”。它表示如果我们完全不引入二阶段结构化过程监督，只做标准 forecast，会得到什么水平。</dd>
+            <dt>正式含义</dt>
+            <dd>Baseline 是第一阶段冻结的“直接做预报”的参考模型，不注入任何二阶段诊断接口，用作所有后续对照。</dd>
+            <dt>当前默认 baseline</dt>
+            <dd>`baseline_forecast_sft_v2`。它代表“只根据共享证据底座直接给出 forecast table”的标准做法。</dd>
+            <dt>为什么重要</dt>
+            <dd>如果二阶段方法不能稳定优于这个 baseline，就不能说过程监督真的创造了价值。</dd>
+          </dl>
+        </article>
+        <article class="mini-card term-card">
+          <h3>术语 2：Oracle 是什么</h3>
+          <dl>
+            <dt>中文可表述为</dt>
+            <dd>“理想诊断注入”或“上限注入实验”。它不是实际部署方式，而是用来回答“如果中间接口完全正确，这套接口本身值不值得学”。</dd>
+            <dt>正式含义</dt>
+            <dd>Oracle 指“不让模型自己预测诊断结果”，而是把规则构造或近似真实的正确诊断信号直接注入 forecast 输入。</dd>
+            <dt>回答的问题</dt>
+            <dd>它回答的不是“模型学会了吗”，而是“这类接口本身有没有价值”。</dd>
+            <dt>为什么必须先做</dt>
+            <dd>如果 oracle 自己都不能改善 forecast，继续训练 predicted diagnostics 就没有意义。</dd>
+          </dl>
+        </article>
+        <article class="mini-card term-card">
+          <h3>术语 3：Predicted / Mainline / Control</h3>
+          <dl>
+            <dt>Predicted 的中文含义</dt>
+            <dd>“模型先预测中间判断，再把该判断接入 forecast”。它对应我们真正关心的“模型是否学会专家过程”。</dd>
+            <dt>Predicted</dt>
+            <dd>先训练一个 diagnostic adapter 从输入证据预测结构化诊断，再把它注入 forecast 模型，检验模型是否学会这套过程。</dd>
+            <dt>Mainline 的中文含义</dt>
+            <dd>“当前主线方案”或“当前推荐方案”。它是现阶段最值得继续投入计算资源和分析精力的方案。</dd>
+            <dt>Confirmed mainline</dt>
+            <dd>在正式 compare 和更大 held-out confirm 上都过线的当前推荐方案。</dd>
+            <dt>Control 的中文含义</dt>
+            <dd>“稳定对照线”。它保留为参照物，用来防止我们被单次更优结果误导。</dd>
+            <dt>Control</dt>
+            <dd>被保留作为稳定性参照或消融对照的旧主线，例如 `slot_correction v1 + baseline intensity + scale 1.20`。</dd>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="examples">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">I/O Shapes</div>
+          <h2>这个任务的输入和输出，实际长什么样</h2>
+          <p>
+            这里展示的不是抽象 schema，而是真实样本。可以看到我们并不是让模型“凭空思考”，
+            而是把观测、环境诊断和 guidance 组织成一个结构化提示，再要求模型输出严格可解析的结果。
+          </p>
+        </div>
+      </div>
+
+      <div class="flow-row">
+        <article class="flow-node">
+          <span class="tag">共享输入证据</span>
+          <h3>观测 + 环境 + guidance</h3>
+          <p>所有阶段共享同一证据底座，包括当前位置、环境诊断、卫星/侦察观测和 ATCF / HRES guidance。</p>
+        </article>
+        <article class="flow-node">
+          <span class="tag">Phase 2 输出</span>
+          <h3>13 字段 diagnostic JSON</h3>
+          <p>先让模型输出可执行的中间判断状态，包括 1 个 `turning_signal` 与 12 个 `slot_1..slot_6` 的 lat/lon 修正桶。</p>
+        </article>
+        <article class="flow-node">
+          <span class="tag">渲染与集成</span>
+          <h3>slot-locked renderer</h3>
+          <p>再把这些结构化判断渲染成对已有 guidance 的受约束修正，不允许改时槽，不允许顺带改 intensity。</p>
+        </article>
+        <article class="flow-node">
+          <span class="tag">最终输出</span>
+          <h3>严格 forecast table</h3>
+          <p>最终仍然回到严格可解析的官方预报表，这样才能和 Phase 1 baseline 与专家官方预报直接比较。</p>
+        </article>
+      </div>
+
+      <div class="example-grid">
+        <article class="mini-card code-card">
+          <h3>真实输入样例：forecast-only prompt 摘要</h3>
+          <pre>## Time Anchor
+- Advisory issue Day01 2100Z
+
+## Current State
+- Position 28.0°N 86.6°W | Motion WEST-NORTHWEST at 2 kt | Intensity 30 kt / 1007 mb
+
+## Environmental Diagnostics
+- Vertical wind shear: 20.1 m/s (strong)
+- Upper-level divergence: -0.22 ×10⁻⁵ s⁻¹ (weak)
+- Sea surface temp / OHC: 26.4 °C (low)
+- Subtropical high: 58050 gpm (strong)
+- Westerly trough: 1893 gpm (strong)
+
+## Observation Evidence
+- Coverage: GOES + Recon available; missing ASCAT
+
+## Model Guidance
+ATCF guidance:
+- Day02 0600Z 26.5°N 84.9°W | 28.5 kt
+- Day02 1800Z 25.5°N 84.5°W | 28.4 kt
+- Day03 0600Z 24.0°N 84.0°W | 25.8 kt
+- Day03 1800Z 23.0°N 83.2°W | 21.5 kt
+- Day04 0600Z 22.3°N 81.4°W | 19.9 kt</pre>
+        </article>
+
+        <article class="mini-card code-card">
+          <h3>真实输出样例 1：forecast table</h3>
+          <pre>Official forecast:
+- Day02 0600Z | 27.7°N 86.7°W | 35 kt
+- Day02 1800Z | 26.4°N 86.6°W | 35 kt
+- Day03 0600Z | 24.8°N 86.2°W | 30 kt
+- Day03 1800Z | 23.7°N 85.7°W | 30 kt
+- Day04 0600Z | 22.6°N 84.3°W | 25 kt</pre>
+        </article>
+
+        <article class="mini-card code-card">
+          <h3>真实输入样例：Phase 2 diagnostic prompt 摘要</h3>
+          <pre>## Time
+- Advisory issue Day01 2100Z
+
+## Steering
+- Subtropical high: 58050 gpm (strong)
+- Westerly trough: 1893 gpm (strong)
+- Vertical wind shear: 20.1 m/s (strong)
+
+## Guidance
+ATCF guidance:
+- Day02 0600Z 26.5°N 84.9°W ...
+- Day02 1800Z 25.5°N 84.5°W ...
+- Day03 0600Z 24.0°N 84.0°W ...
+
+## Turning Signal Cues
+- ATCF: early south-east, late south-east
+- heading change 39 deg
+- notable turn signal
+
+## Slot-Locked Track Correction Cues
+- keep slot count/order fixed
+- predict lat/lon correction bucket only
+- do not change timing or intensity</pre>
+        </article>
+
+        <article class="mini-card code-card">
+          <h3>真实输出样例 2：diagnostic JSON</h3>
+          <pre>{"turning_signal":"steady","slot_1_lat_bias_vs_consensus_bucket":"north_small","slot_1_lon_bias_vs_consensus_bucket":"west_small","slot_2_lat_bias_vs_consensus_bucket":"north_small","slot_2_lon_bias_vs_consensus_bucket":"west_small","slot_3_lat_bias_vs_consensus_bucket":"north_small","slot_3_lon_bias_vs_consensus_bucket":"west_small","slot_4_lat_bias_vs_consensus_bucket":"north_small","slot_4_lon_bias_vs_consensus_bucket":"west_large","slot_5_lat_bias_vs_consensus_bucket":"near_consensus","slot_5_lon_bias_vs_consensus_bucket":"west_large","slot_6_lat_bias_vs_consensus_bucket":null,"slot_6_lon_bias_vs_consensus_bucket":null}</pre>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="protocol">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Protocol</div>
+          <h2>实验设计：为什么这些结论可信</h2>
+          <p>结论的可信度来自严格的阶段划分、清晰的因果问题拆解，以及每一阶段都必须满足的对照与 go/no-go 条件。</p>
+        </div>
+      </div>
+      <div class="protocol-grid">
+        <article class="mini-card">
+          <h3>Phase 2A：接口验证</h3>
+          <p>
+            先做 oracle compare，只问一个问题：如果把某种结构化决策状态直接交给 forecast 模型，
+            它能不能显著降低 `track_error_km` 和 `mean_track_diff_vs_official_km`。
+          </p>
+        </article>
+        <article class="mini-card">
+          <h3>Phase 2B：预测恢复</h3>
+          <p>
+            只有当接口本身被证明有效，才训练 predicted diagnostic adapter。
+            这一步回答的是：模型能否从同样的输入证据中恢复这套过程信息，并把一部分 oracle 增益带回 forecast。
+          </p>
+        </article>
+        <article class="mini-card">
+          <h3>Phase 2C：窄扩展，不做泛化发散</h3>
+          <p>
+            只有在 2A 和 2B 都通过后，才允许扩展 schema。并且我们已经用负结果证明：
+            当前阶段不能简单扩成 richer schema，必须沿“窄而可执行”的接口继续推进。
+          </p>
+        </article>
+      </div>
+
+      <div class="callout">
+        <h3>这个设计为什么有方法学价值</h3>
+        <ul>
+          <li>它把“接口有没有价值”和“模型有没有学会接口”这两个问题拆开了，因此因果关系更清楚。</li>
+          <li>它避免把 standalone 分类指标误当成真实 forecast 改善。</li>
+          <li>它允许负结果直接产生方法学收敛，而不是继续无界扩展 schema。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="meaning">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Executive Meaning</div>
+          <h2>这些结果的阶段性含义</h2>
+          <p>在完成数据与方法说明后，最重要的是明确：当前结果已经回答了哪些问题，又把剩余问题收缩到了什么范围。</p>
+        </div>
+      </div>
+      <div class="status-grid">
+        <article>
+          <h3>1. 不是“diagnostics 可能有用”</h3>
+          <p>
+            我们已经证明，某类结构化 diagnostics 不只是让标签更好看，而是可以真实降低 forecast track 主指标。
+            关键转折点是 `oracle slot_correction` 首次显著通过，说明接口本身是有效的。
+          </p>
+        </article>
+        <article>
+          <h3>2. 正确方向不是更宽 schema</h3>
+          <p>
+            `track_core v1` 这类 richer schema 已被证明不是当前正确主线。真正有效的是更窄、可执行、slot-locked 的轨迹修正接口，
+            后续扩展也必须沿 executable interface 这条线走。
+          </p>
+        </article>
+        <article>
+          <h3>3. 模型不只是在“直接给答案”</h3>
+          <p>
+            当前主线不仅 forecast 指标改善，而且 standalone contract 已修稳，`turning_signal` 的 exact accuracy 与 macro-F1 都显著提升。
+            这说明模型学到的是可执行的中间判断状态，而不只是表面输出。
+          </p>
+        </article>
+        <article>
+          <h3>4. 剩余问题已经收窄</h3>
+          <p>
+            当前 blocker 不再是 JSON parseability，也不是 generic redesign，而是 12 个 slot bucket 字段中最弱的语义分辨率，
+            尤其是 `lat bucket` 仍未真正修好。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="logic">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Research Logic</div>
+          <h2>我们现在这条线的核心逻辑</h2>
+          <p>
+            这项工作不是把长文本 reasoning 直接塞回 forecast 主任务，而是先验证：模型能否学会专家使用的结构化判断节点，
+            再看这些判断节点能否稳定改善下游 forecast。
+          </p>
+        </div>
+      </div>
+
+      <div class="logic-grid">
+        <article class="logic-step" data-step="01">
+          <span class="tag">长期链路</span>
+          <h3>输入 → 诊断 → 预报 → 解释</h3>
+          <p>
+            项目长期目标是三段式链路：先输出结构化 diagnostics，再生成严格 forecast，最后才生成 explanation。
+            这意味着 reasoning 是解释层，不是当前主决策层。
+          </p>
+        </article>
+        <article class="logic-step" data-step="02">
+          <span class="tag">为什么先不做自由文本 reasoning</span>
+          <h3>先证明结构化中间接口有价值</h3>
+          <p>
+            reasoning 文本覆盖率低、自动评估难、容易破坏严格 forecast 格式，因此当前阶段的更稳做法是先学习结构化 decision state，
+            再把 explanation 放到后续阶段。
+          </p>
+        </article>
+        <article class="logic-step" data-step="03">
+          <span class="tag">当前定义的“学会推理”</span>
+          <h3>学会结构化判断，而不是学会写长文</h3>
+          <p>
+            这里的推理，不等于生成一段像专家的话，而是学会专家依赖的关键判断节点、诊断因子和决策结构。
+            所以我们重点看的是 contract、macro-F1、turning signal、bucket semantics，而不是 prose 是否像人。
+          </p>
+        </article>
+        <article class="logic-step" data-step="04">
+          <span class="tag">阶段收敛</span>
+          <h3>先打通可执行接口，再精修弱字段</h3>
+          <p>
+            当前阶段已经过了“找接口”和“修 contract”的部分。后续最合理的动作是冻结已验证主线，
+            只对最弱的 bucket 语义做定向提升。
+          </p>
+        </article>
+      </div>
+
+      <div class="callout">
+        <h3>Phase 2 不做什么</h3>
+        <ul>
+          <li>不把 `reasoning_text` 拼回主 forecast target。</li>
+          <li>不把“标签更准一点”当成下游真正改善的替代证据。</li>
+          <li>不把 richer schema 的训练可跑通，误判为 forecast 价值已经成立。</li>
+          <li>不把“会写 explanation”误解成“已经学会专家如何做决策”。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Stage Timeline</div>
+          <h2>从失败分支到当前主线的阶段推进</h2>
+          <p>这条主线不是凭直觉选出来的，而是通过多轮负结果与正结果共同收敛出来的。</p>
+        </div>
+      </div>
+      <div class="timeline">
+        <article class="timeline-card">
+          <span class="date">Phase 2A</span>
+          <h3>先验证接口是否真实有效</h3>
+          <ul>
+            <li>`track_turn`、`track_inflection`、`track_correction` 都没过主指标 gate。</li>
+            <li>`oracle slot_correction` 首次明确通过，成为第一条正向接口。</li>
+            <li>结论：正确方向是 slot-locked、track-only、可执行接口。</li>
+          </ul>
+        </article>
+        <article class="timeline-card">
+          <span class="date">Phase 2B</span>
+          <h3>再验证 predicted 能否恢复 oracle 增益</h3>
+          <ul>
+            <li>`slot_correction v0` 有部分 gain，但 contract 失败。</li>
+            <li>`v1` 修好 contract 主问题，但还差 dual-track gate。</li>
+            <li>加入 baseline intensity 与 scale 1.20 后，在更大 held-out confirm 上正式通过。</li>
+          </ul>
+        </article>
+        <article class="timeline-card">
+          <span class="date">Phase 2C</span>
+          <h3>只做窄而可执行的扩展</h3>
+          <ul>
+            <li>`track_core v1` 证明 generic richer schema 不是当前主线。</li>
+            <li>转向 `slot_turn_correction` 这条更窄的 executable extension。</li>
+            <li>`v1` 同时守住 forecast-side gain 和 standalone contract，Phase 2C 收口完成。</li>
+          </ul>
+        </article>
+        <article class="timeline-card">
+          <span class="date">Next Phase</span>
+          <h3>进入 bucket semantic resolution</h3>
+          <ul>
+            <li>固定 13 字段 contract、renderer、baseline intensity integration。</li>
+            <li>不再修 turning，而是专门打最弱的 slot bucket 语义。</li>
+            <li>核心瓶颈已经收窄到 `lat bucket`。</li>
+          </ul>
+        </article>
+        <article class="timeline-card">
+          <span class="date">Frontier</span>
+          <h3>`v3` 是暂时领先者</h3>
+          <ul>
+            <li>sample-200 上目前最好，但还只是 provisional winner。</li>
+            <li>增益主要来自 `lon bucket`，不是原先预想中的 `lat repair`。</li>
+            <li>必须 full confirm 后才能考虑主线升级。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="evidence">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Hard Evidence</div>
+          <h2>关键数据：先报告 confirmed evidence，再报告 exploratory evidence</h2>
+          <p>
+            这里明确区分两类证据层级。第一层是当前最可靠的 held-out confirm 结果，样本数 `n=1454`；
+            第二层是 `v3` 的 sample-200 exploratory signal，它能说明前沿方向，但还不能直接改写主线结论。
+          </p>
+        </div>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <h3>当前 confirmed mainline</h3>
+          <p>`predicted slot_turn_track_plus_baseline_intensity_scale_1p20_v1`</p>
+          <strong class="metric-value">151.96 km</strong>
+          <p>forecast track error</p>
+          <span class="delta">较 baseline 改善 29.95 km / 16.5%</span>
+        </article>
+        <article class="metric-card">
+          <h3>对 official 的轨迹差距</h3>
+          <p>同一条 confirmed mainline，`n=1454`</p>
+          <strong class="metric-value">131.04 km</strong>
+          <p>model-vs-official track diff</p>
+          <span class="delta">较 baseline 收窄 32.96 km / 20.1%</span>
+        </article>
+        <article class="metric-card">
+          <h3>结构化过程已被学到一部分</h3>
+          <p>同一条 confirmed mainline 的 standalone 诊断结果</p>
+          <strong class="metric-value">1.0000 / 0.8309</strong>
+          <p>`json_parse_rate` / `turning_signal macro-F1`</p>
+          <span class="delta">说明中间判断不只是后处理伪造出来的</span>
+        </article>
+      </div>
+
+      <div class="table-wrap" style="margin-top: 18px;">
+        <table>
+          <thead>
+            <tr>
+              <th>variant</th>
+              <th class="num">sample</th>
+              <th class="num">joint exact</th>
+              <th class="num">mean macro-F1</th>
+              <th class="num">track error (km)</th>
+              <th class="num">vs official (km)</th>
+              <th class="num">strict parseable</th>
+              <th>定位</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>baseline_forecast_sft_v2</strong></td>
+              <td class="num">1454</td>
+              <td class="num">N/A</td>
+              <td class="num">N/A</td>
+              <td class="num">181.91</td>
+              <td class="num">164.00</td>
+              <td class="num">0.1960</td>
+              <td><span class="badge info">Phase 1 参考基线</span></td>
+            </tr>
+            <tr>
+              <td><strong>diagnostic adapter: slot_turn_correction_v1</strong></td>
+              <td class="num">1613</td>
+              <td class="num">0.024</td>
+              <td class="num">0.3246</td>
+              <td class="num">N/A</td>
+              <td class="num">N/A</td>
+              <td class="num">1.0000</td>
+              <td><span class="badge info">过程学习证据</span></td>
+            </tr>
+            <tr>
+              <td><strong>predicted_slot_turn_track_plus_baseline_intensity_scale_1p20_v1</strong></td>
+              <td class="num">1454</td>
+              <td class="num">0.024</td>
+              <td class="num">0.3246</td>
+              <td class="num">151.96</td>
+              <td class="num">131.04</td>
+              <td class="num">1.0000</td>
+              <td><span class="badge good">当前 confirmed mainline</span></td>
+            </tr>
+            <tr>
+              <td><strong>expert_official</strong></td>
+              <td class="num">1454</td>
+              <td class="num">N/A</td>
+              <td class="num">N/A</td>
+              <td class="num">97.43</td>
+              <td class="num">0.00</td>
+              <td class="num">1.0000</td>
+              <td><span class="badge good">专家参考上限</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="compare-grid">
+        <article class="mini-card">
+          <h3>confirmed evidence：大样本 held-out 结果</h3>
+          <p>长度越短越好。这里统一使用 `n=1454` 的 confirmed 口径，对比 baseline、当前主线和 expert official。</p>
+          <div class="bars">
+            <div class="bar-row">
+              <div class="bar-top"><span>Baseline `track_error_km`</span><strong>181.91</strong></div>
+              <div class="bar-track"><div class="bar-fill alt" style="width: 100%;"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-top"><span>Current mainline</span><strong>151.96</strong></div>
+              <div class="bar-track"><div class="bar-fill good" style="width: 83.5%;"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-top"><span>Expert official</span><strong>97.43</strong></div>
+              <div class="bar-track"><div class="bar-fill" style="width: 53.6%;"></div></div>
+            </div>
+          </div>
+        </article>
+        <article class="mini-card">
+          <h3>exploratory evidence：`v3` 为什么只能算前沿探索</h3>
+          <ul>
+            <li>`v3` 的 forecast 优势来自 sample-200 compare：`track_error_km = 143.14`，`vs official = 125.36`。</li>
+            <li>同一批 sample-200 上，`v3 oracle` 为 `115.95 / 65.42`，说明接口方向仍然是正的。</li>
+            <li>但 `v3` 还没有对应的大样本 forecast confirm，因此现在只能说“值得优先验证”，不能说“已经替代主线”。</li>
+            <li>学术报告里应把它表述为 frontier result，而不是 final result。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="reasoning">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Reasoning Evidence</div>
+          <h2>除了直接给出预报，我们如何判断模型是否学到了“如何推理”</h2>
+          <p>
+            当前阶段并不以长文本 reasoning prose 为目标；推理学习的证据，体现在模型是否能恢复并稳定输出
+            专家在预报时依赖的结构化中间判断状态。
+          </p>
+        </div>
+      </div>
+
+      <div class="reason-grid">
+        <article class="mini-card">
+          <h3>当前“学会推理”的正确定义</h3>
+          <ul>
+            <li>不是“学会写一段像专家的话”。</li>
+            <li>而是学会专家使用哪些证据、如何在关键信号间做判断、如何在模式分歧里取舍。</li>
+            <li>因此本阶段最重要的不是 explanation prose，而是 `structured diagnostics / decision states`。</li>
+            <li>长期链路应是：`input -> diagnostics -> forecast -> explanation`。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>在当前实验里，推理学习如何被观测</h3>
+          <ul>
+            <li><strong>Oracle pass</strong>：证明这套 decision interface 本身有 forecast 价值，不是伪标签。</li>
+            <li><strong>Predicted recovery</strong>：证明模型能从同样证据中恢复这套 decision state，而不是只能吃“正确答案”。</li>
+            <li><strong>Standalone contract</strong>：证明模型能稳定表达中间判断状态，而不是只能依赖后处理 fallback。</li>
+            <li><strong>Field-level 指标</strong>：例如 `turning_signal`、bucket-only macro-F1，直接对应具体判断节点是否学会。</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="compare-grid">
+        <article class="mini-card">
+          <h3>最强证据：`slot_turn_correction v1` 已不只是 forecast-side 有效</h3>
+          <ul>
+            <li>`json_parse_rate = 1.0000`：说明 raw diagnostic head 已稳定守住 contract。</li>
+            <li>`turning_signal exact_accuracy = 0.8246`，`macro-F1 = 0.8309`：说明关键转向判断已不再塌缩到 `<null>/steady`。</li>
+            <li>`mean_macro-F1 = 0.3246`：说明模型学到了一部分结构化诊断字段，而不是完全靠 renderer 补救。</li>
+            <li>与此同时 forecast 指标仍优于前主线，说明这些中间判断是“可执行的”，不是装饰性标签。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>仍不能夸大：我们还没有“学会全部推理”</h3>
+          <ul>
+            <li>`joint_exact` 依然很低，说明全字段同时命中的能力还弱。</li>
+            <li>最弱部分已经收敛到 12 个 slot bucket 里的 `lat bucket semantics`。</li>
+            <li>`v2`、`v3` 证明 aggregate 指标能继续升，但增益主要来自 `lon bucket`，不是 `lat bucket`。</li>
+            <li>这意味着我们已经学会了“部分结构化决策”，但还没有学会“完整、均衡的决策分解”。</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="callout">
+        <h3>为什么当前不直接讲“reasoning text 学到了多少”</h3>
+        <p>
+          因为 reasoning 在项目设计里是 Phase 3 的解释层，而不是 Phase 2 的主决策层。当前 `reasoning_only` 数据规模只有
+          `train 385 / val 138 / test 148`，远小于 Phase 2 各 diagnostic view 的 `3959 / 1354 / 1613`。
+          所以现在更稳、更可信的说法是：
+          <strong>我们已经证明模型能学会一部分专家的结构化判断过程，但还没有进入 explanation prose 的系统训练阶段。</strong>
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="distribution">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Distribution View</div>
+          <h2>除了平均值，我们还看分布与尾部</h2>
+          <p>
+            只看均值容易把“少量灾难性失败”平均掉，因此这里额外报告中位数、格式稳定性和字段级分布，
+            用来判断改进到底是整体性的，还是只是少数样本的偶然波动。
+          </p>
+        </div>
+      </div>
+
+      <div class="distribution-grid">
+        <article class="mini-card">
+          <h3>当前项目：轨迹误差均值与中位数</h3>
+          <div class="dual-bars">
+            <div class="dual-bar">
+              <div class="labels"><strong>Baseline</strong><span>mean 181.9 / p50 139.9</span></div>
+              <div class="bar-stack">
+                <div class="stack-label"><span>mean</span><span>181.9</span></div>
+                <div class="bar-track"><div class="bar-fill alt" style="width: 100%;"></div></div>
+                <div class="stack-label"><span>p50</span><span>139.9</span></div>
+                <div class="bar-track"><div class="bar-fill alt" style="width: 76.9%;"></div></div>
+              </div>
+            </div>
+            <div class="dual-bar">
+              <div class="labels"><strong>Mainline</strong><span>mean 152.0 / p50 129.1</span></div>
+              <div class="bar-stack">
+                <div class="stack-label"><span>mean</span><span>152.0</span></div>
+                <div class="bar-track"><div class="bar-fill good" style="width: 83.5%;"></div></div>
+                <div class="stack-label"><span>p50</span><span>129.1</span></div>
+                <div class="bar-track"><div class="bar-fill good" style="width: 71.0%;"></div></div>
+              </div>
+            </div>
+            <div class="dual-bar">
+              <div class="labels"><strong>Expert Official</strong><span>mean 97.4 / p50 81.2</span></div>
+              <div class="bar-stack">
+                <div class="stack-label"><span>mean</span><span>97.4</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width: 53.6%;"></div></div>
+                <div class="stack-label"><span>p50</span><span>81.2</span></div>
+                <div class="bar-track"><div class="bar-fill" style="width: 44.6%;"></div></div>
+              </div>
+            </div>
+          </div>
+          <p class="axis-note">
+            结论：当前主线不只是把均值往下拉，也把中位数往下拉，说明改善不是少量样本造成的假象。
+          </p>
+        </article>
+
+        <article class="mini-card">
+          <h3>部署稳定性：格式可解析率</h3>
+          <div class="mini-metrics">
+            <div class="item">
+              Phase 1 baseline strict parseable
+              <strong>19.6%</strong>
+            </div>
+            <div class="item">
+              当前 confirmed mainline strict parseable
+              <strong>100%</strong>
+            </div>
+            <div class="item">
+              baseline vs official 平均轨迹差
+              <strong>164.0 km</strong>
+            </div>
+            <div class="item">
+              mainline vs official 平均轨迹差
+              <strong>131.0 km</strong>
+            </div>
+          </div>
+          <p class="axis-note">
+            当前主线不仅更接近专家，而且在输出 contract 上已经达到可部署的稳定性。这一点对学术上讲“可执行接口”非常关键。
+          </p>
+        </article>
+
+        <article class="mini-card">
+          <h3>字段级分布：`v3` 到底改进了什么</h3>
+          <ul>
+            <li>`mean_field_macro_f1`：`0.3246 → 0.3418`</li>
+            <li>`turning_signal macro-F1`：`0.8309 → 0.8256`，基本持平</li>
+            <li>`slot_1_lon macro-F1`：`0.1846 → 0.2956`，提升明显</li>
+            <li>`slot_1_lat macro-F1`：`0.1414 → 0.1431`，几乎不动</li>
+            <li>`slot_6_lat macro-F1`：`0.2171 → 0.2205`，几乎不动</li>
+            <li>`slot_6_lon macro-F1`：`0.2752 → 0.2800`，仅小幅改善</li>
+          </ul>
+          <p class="axis-note">
+            这说明 `v3` 的收益主要仍来自 `lon bucket`，而不是原假设中的 `lat bucket repair`。也因此它现在只能算 provisional winner。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Failure Archive</div>
+          <h2>失败分支告诉了我们什么</h2>
+          <p>这些负结果不是附属信息，而是研究收敛的重要依据：它们解释了为什么当前最合理的策略是继续收窄，而不是重新发散。</p>
+        </div>
+      </div>
+      <div class="failure-grid">
+        <article class="mini-card">
+          <h3>失败分支 1：`track_turn` / `track_inflection` / `track_correction`</h3>
+          <ul>
+            <li>`track_turn`：standalone 指标有提升，但没有转成 track 主指标改善，说明不能用 label score 替代 downstream 结论。</li>
+            <li>`track_inflection`：oracle 自己都没改善主指标，说明接口过于抽象，还存在 timing leakage 风险。</li>
+            <li>`track_correction`：比环境标签更直接，但 fixed-lead anchor 仍太间接，无法稳定缩小 track gap。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>失败分支 2：`track_core v1`</h3>
+          <ul>
+            <li>训练能跑通，contract 也稳定，但 richer diagnostics 没有转成更好的 forecast track gain。</li>
+            <li>这说明当前阶段不能简单沿“更宽 schema、更丰富字段”继续铺开。</li>
+            <li>也因此 Phase 2C 的正确方向变成了更窄但可执行的 `slot_turn_correction`，而不是 `track_core v2`。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="next">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Plan</div>
+          <h2>下一步计划：从“主线已验证”进入“弱语义定向提升”</h2>
+          <p>
+            当前最合理的计划不是回到 redesign，也不是立刻扩到 reasoning prose，而是以当前 confirmed mainline 为底座，
+            做最小必要改动，把剩余瓶颈逐个打穿。
+          </p>
+        </div>
+      </div>
+
+      <div class="next-grid">
+        <article class="mini-card">
+          <h3>Step 1：先完成 `v3` full confirm</h3>
+          <ul>
+            <li>把 `v3` 现在的 sample-200 provisional winner 状态，转成更大 held-out 上的正式结论。</li>
+            <li>只有当 `track_error_km` 与 `mean_track_diff_vs_official_km` 都继续优于当前 confirmed mainline，才允许升级主线。</li>
+            <li>这是最近一步里最该优先做的事，因为它关系到主线是否切换。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>Step 2：继续盯 `lat bucket semantics`</h3>
+          <ul>
+            <li>冻结 13 字段 contract、renderer、baseline intensity integration、turning path。</li>
+            <li>不再泛化地修 all bucket，而是只盯 `north/south` 判别。</li>
+            <li>重点字段是 `slot_1_lat` 与 `slot_6_lat`，它们仍是最弱短板。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>Step 3：评估口径保持严格</h3>
+          <ul>
+            <li>继续同时看两类指标：forecast-side 主指标，以及 standalone diagnostic contract / field-level 指标。</li>
+            <li>不允许只凭 `mean_macro-F1` 上升就宣称主线升级。</li>
+            <li>继续单独跟踪 `bucket-only mean macro-F1`，避免 `turning_signal` 掩盖真正短板。</li>
+          </ul>
+        </article>
+        <article class="mini-card">
+          <h3>Step 4：Phase 3 先不提前启动</h3>
+          <ul>
+            <li>reasoning/explanation 仍应作为后续独立阶段，而不是现在与 Phase 2 主线混训。</li>
+            <li>当前更稳的叙述是：我们先把结构化 decision state 学稳，再考虑 explanation 层。</li>
+            <li>这能避免为了长文本解释，破坏已经验证通过的 forecast 主链路。</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="callout">
+        <h3>下一步的核心表述</h3>
+        <p>
+          “下一步不是重新设计 diagnostics，也不是提前回到自由文本 reasoning；我们会先用更大 held-out 数据确认
+          `slot_turn_correction v3` 是否能正式替代当前主线，同时继续只针对最弱的 `lat bucket semantics`
+          做定向提升，保持当前已验证通过的 executable interface 不被破坏。”
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow">Source Notes</div>
+          <h2>数据与口径来源</h2>
+          <p>本页面综合使用外部背景数据、专家修正机制数据和本项目正式运行结果，分别服务于“背景问题”“机制解释”和“当前进展”三个层面。</p>
+        </div>
+      </div>
+      <div class="source-list">
+        <a href="./PHASE2_DIAGNOSTIC_DESIGN.md">`docs/PHASE2_DIAGNOSTIC_DESIGN.md`</a>
+        <a href="./rebuilt_dataset.md">`docs/rebuilt_dataset.md`</a>
+      </div>
+      <p class="footnote">
+        背景对比数据来自 `/root/AIvsNWP/outputs/eval_overall_v2_ofcl.csv`，用于证明专家官方预报在大范围历史比较中仍有明显优势。
+        页面中嵌入的现成图已复制到 `docs/assets/phase2_briefing/`，避免依赖外部绝对路径。
+        专家修正机制数据来自 `/root/MOSNet/outputs/paper1_full/data/figure4/figure4_expert_summary.csv`，用于证明专家修正不是随机行为，而是沿稳定 pathway 做系统补偿。
+        当前项目的 confirmed mainline 数值来自
+        `runs/phase2_diagnostic_slot_turn_correction_v1_confirm_20260420_141813/evals/forecast_integration_compare_sample1613_seed3407.models/`
+        与对应的 `diagnostic_eval_summary_sample1613_seed3407.models/01_diagnostic_adapter_slot_turn_correction_v1.json`。
+        `v3` 的 exploratory 数值来自
+        `runs/phase2_diagnostic_slot_turn_correction_v3_20260421_010206/evals/forecast_integration_compare_sample200_seed3407.json`
+        和 `runs/phase2_diagnostic_slot_turn_correction_v3_confirm_20260421_090002/evals/diagnostic_eval_summary_sample1613_seed3407.json`。
+        因此，汇报时应明确区分：`v1 + baseline intensity + scale 1.20` 是当前 confirmed mainline，`v3` 仍是待 full confirm 的前沿分支。
+      </p>
+    </section>
+  </div>
+</body>
+</html>
